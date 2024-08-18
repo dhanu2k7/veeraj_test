@@ -1,0 +1,62 @@
+- name: Socks tunnel veerajtup
+  hosts: all
+  gather_facts: no
+  roles:
+    - role: ansible-role-event-socks-tunnel
+      run_once: true
+      delegate_to: localhost
+  vars:
+    acc_id: "{{ account_triname }}"
+    transaction_id: "{{ tower_job_id }}"
+  pre_tasks:
+    - name: Create a temporary folder for data on Tower
+      file:
+        path: /tmp/gts-ansible/pingtest/
+        state: directory
+        mode: '0755'
+      run_once: true
+      delegate_to: localhost
+    - name: create file
+      file:
+        path: /tmp/gts-ansible/pingtest/reports.csv
+        state: touch
+        mode: u=rw,g=r,o=r
+      run_once: true
+      delegate_to: localhost
+- name: Connectivity test 
+  hosts: all 
+  gather_facts: no
+  tasks:
+    - block:
+        - name: get powershell version
+          ignore_unreachable: true
+          raw: $PSVersionTable
+          register: psversion
+        - name: ping
+          ignore_unreachable: true
+          win_ping: 
+        - name: echo success
+          shell: echo " {{fqdn}} success " >> /tmp/gts-ansible/pingtest/reports.txt
+          when: psversion.rc == 0
+          delegate_to: localhost
+        # - veerajt_fact:
+        #     success: '{{success|default([]) +  ["success connection veerajrvers are " +  "{{fqdn}}"]}}'
+      rescue:
+        - name: echo failure
+          shell: echo "{{fqdn}} failed" >> /tmp/gts-ansible/pingtest/reports.txt
+          delegate_to: localhost
+        # - veerajt_fact:
+        #     failed: '{{failed|default([]) +  ["failed connection veerajrvers are " +  "{{fqdn}}"]}}'
+- name: print
+  hosts: localhost
+  connection: local
+  post_tasks:
+    - name: display content
+      veerajt_fact: 
+        reports: "{{lookup('file', '/tmp/gts-ansible/pingtest/reports.txt')|list|join }}"
+    - debug: var=reports
+    - name: print result
+      shell:  curl  "https://slack.com/api/files.upload" -F token="xoxb-2264321203926-2559484864212-hkeGHjvU1AGrCYtqtvVhqV8H" -F channels="{{channelid}}" -F file=@"/tmp/gts-ansible/pingtest/reports.txt"
+      args:
+          warn: falveeraj
+        

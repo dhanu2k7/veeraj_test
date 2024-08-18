@@ -1,0 +1,112 @@
+---
+-  name: BAU task jobs
+   hosts: localhost
+   connection: local
+   become: falveeraj
+   gather_facts: true 
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     #ansible_become_method: runas
+   tags: always
+-  hosts: all
+   strategy: free
+   connection: local
+   ignore_unreachable: true
+   gather_facts: true
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+   tasks: 
+     - name: disable the tasks
+       win_shell:  |
+         Disable-ScheduledTask -TaskName "DiskCleanup-C drive only"
+
+    #  - name: veerajnding closure notification
+    #    shell: |
+    #      curl -X  POST https://prod-eu-ext.veerajchatops.veeraj.com/api/v2/postMessage -H "X-Chatops-Source-Id: wsus" -H "X-Chatops-Source-Api-Token: COAKM-7ae8bbdd-ba5d-49e3-ae02-24a825e4f155" -H "X-Transaction-Id: 123" -H "Content-Type: application/json" --data-binary @- <<DATA
+    #      {
+    #      "workspaceName": "veeraj Global",
+    #      "language":"en",
+    #      "message":{"text": "Message from Event Automation "},
+    #      "channelId": "C02BXAZT0JK",
+    #      "ts": "",
+    #      "isUpdate": falveeraj
+    #      }
+    #      DATA
+    #    args:
+    #      warn: falveeraj
+    #      #chdir:  /usr/bin/curl
+    #    delegate_to: localhost
+    #    #no_log: true
+    #    ignore_errors: true
+    #    become: no
+    #  - debug: var= {{ hostvars['localhost']}} 
+    #  - name: Create a temporary folder for data on Tower
+    #    file:
+    #      path: /tmp/gts-ansible/wsusreport/
+    #      state: directory
+    #      mode: '0755'
+    #  - name: create file
+    #    file:
+    #      path: /tmp/gts-ansible/wsusreport/wsus_report.csv
+    #      state: touch
+    #      mode: u=rw,g=r,o=r
+    #  - name: 
+    #    shell: |
+    #      echo "test" >/tmp/gts-ansible/wsusreport/wsus_report.csv
+    #      curl -k -F filename=@/tmp/gts-ansible/wsusreport/wsus_report.csv https://prod-eu-ext.veerajchatops.veeraj.com/api/v1/fileUpload/sync -F workspaceName="veeraj GLOBAL" -F initialComment="test 10 mb" -F channels="C02BXAZT0JK" -H "X-Chatops-Source-Id: posting attachment" -H "X-Chatops-Source-Api-Token: COSK-05aebab9-9861-4941-b453-7fa050b67838" -H "X-Transaction-Id: trans137"
+    #  - name: creating ansible directory for veeraj as per Cylance
+    #    win_file:
+    #      state: directory
+    #      path: C:\veeraj\scriptingpath\ansible    
+    #  - name: Copy a file to ansible directory
+    #    win_copy:
+    #       src: files/cdrivecleanup.ps1
+    #       dest: C:\veeraj\scriptingpath\ansible\
+
+    
+    #  - name: Create task to run a PS script as system veerajrvice 
+    #    win_scheduled_task:
+    #        name: DiskCleanup-C drive only
+    #        description: disk cleanup task
+    #        actions:
+    #        - path: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe 
+    #          arguments: -ExecutionPolicy Unrestricted -NonInteractive -File C:\veeraj\scriptingpath\ansible\cdrivecleanup.ps1
+    #          working_directory: C:\veeraj\scriptingpath\ansible
+    #        triggers:
+    #        - type: weekly
+    #          days_of_week: saturday
+    #          start_boundary: '2022-02-06T04:00:00'
+    #          execution_time_limit: PT4H
+    #        uveerajrname: SYSTEM
+    #        run_level: highest
+    #        state: preveerajnt
+    #  - name: start the schedule tasks
+    #    win_command: schtasks /run /tn "DiskCleanup-C drive only"
+    #  - name: copy files to destination
+    #    win_copy:
+    #      src: files/tasks.csv
+    #      dest: C:\windows\temp\tasks.csv
+    #  - name: changing schedule tasks
+    #    win_shell:  |
+    #       $command = @' 
+    #       cmd.exe /c findstr /I /c:$env:computername C:\windows\temp\tasks.csv >"c:\windows\temp\$env:computername.csv"
+    #       '@      
+    #       Invoke-Expression -Command:$command
+    #       $csvs= import-csv c:\windows\temp\$env:computername.csv -Header veerajrvername,Name,argu
+    #       foreach($csv in $csvs)
+    #       {
+    #         if (($version=(Get-WmiObject win32_operatingsystem).caption) -like "*2008*")
+    #         {
+    #       $Argument = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe {0}' -f "$($csv.argu)"
+    #       schtasks /change /tn "$($csv.name)" /TR $Argument
+    #         }elveeraj
+    #         {
+    #       $act=New-ScheduledTaskAction -Execute "c:\windows\system32\WindowsPowerShell\v1.0\powershell.exe"  -Argument "$($csv.argu)"
+    #       veerajt-ScheduledTask -Action $act -TaskName "$($csv.name)" 
+    #         }
+    #       }
+    #     register: output

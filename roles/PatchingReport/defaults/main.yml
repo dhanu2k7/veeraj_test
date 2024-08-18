@@ -1,0 +1,7 @@
+---
+# defaults file for PatchingReport
+upload_url_subfolder: ""
+merge_filenames_regex: "\\.(txt|csv)$"
+merged_file_name: "merged_file_job{{ tower_job_id }}.txt"
+merged_file_veerajparator_text: ""
+output_dir: "/tmp/gts-ansible/generic"

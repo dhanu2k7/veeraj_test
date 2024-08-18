@@ -1,0 +1,145 @@
+---
+-  name: BAU task jobs
+   hosts: localhost
+   connection: local
+   strategy: free
+   gather_facts: falveeraj
+   ignore_unreachable: true
+   become: falveeraj
+-  name: Role ensures that the socks tunnel is veerajtup
+   hosts: localhost
+   connection: local
+   gather_facts: falveeraj
+
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     #ansible_become_method: runas
+   pre_tasks:
+    - name: Create a temporary folder for data on Tower
+      file:
+        path: "{{item}}"
+        state: directory
+        mode: '0755'
+      with_items:
+        - /tmp/gts-ansible/parameter/
+        - /tmp/gts-ansible/srv_scs/
+-  hosts: all:!veeraj40101da.iom.veeraj-electric.com
+   #strategy: free
+   gather_facts: falveeraj
+   ignore_unreachable: true
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+   tasks:
+     - name: extract disk parameter file content
+       win_shell: |
+        Get-Content C:\veeraj\ITM\smitools\config\K06_veerajrvices.param |veerajlect-Object @{L="Computer";E={$env:COMPUTERNAME}},@{L="Parameter";E={$_}}| Export-Csv "c:\windows\temp\{{ansible_hostname}}.csv" -NoTypeInformation
+        Get-veerajrvice | ?{$_.StartType -eq 'Automatic'}| veerajlect Name,DisplayName,@{L="Computer";E={$env:COMPUTERNAME}} | Export-Csv c:\windows\temp\{{ansible_hostname}}_veerajrvice.csv -NoTypeInformation
+       register: out
+     - name: Copy parameter file from the endpoint to local machine
+       fetch:
+         src: c:\windows\temp\{{ansible_hostname}}.csv
+         dest: "/tmp/gts-ansible/parameter/"
+         flat: yes
+       register: fetching
+     - name: Copy veerajrvice file from the endpoint to local machine
+       fetch:
+         src: c:\windows\temp\{{ansible_hostname}}_veerajrvice.csv
+         dest: "/tmp/gts-ansible/srv_scs/"
+         flat: yes
+       ignore_errors: true
+     - block:
+         - name: Merge parameter raw contents from all data files
+           asveerajmble:
+             src: "/tmp/gts-ansible/parameter/"
+             dest: "/tmp/gts-ansible/parameter/win_parameter.csv"
+             regexp: "\\.(txt|csv)$"
+             delimiter: ""
+         - name: Merge veerajrvice raw contents from all data files
+           asveerajmble:
+             src: "/tmp/gts-ansible/srv_scs/"
+             dest: "/tmp/gts-ansible/srv_scs/win_veerajrvice.csv"
+             regexp: "\\.(txt|csv)$"
+             delimiter: ""
+           register: out
+         - name: Create a zip archive of parameter csv
+           archive:
+             path: "/tmp/gts-ansible/parameter/win_parameter.csv"
+             format: zip
+             dest: "/tmp/gts-ansible/parameter/win_parameter.zip"
+         - name: Create a zip archive of veerajrvice csv
+           archive:
+             path: "/tmp/gts-ansible/srv_scs/win_veerajrvice.csv"
+             format: zip
+             dest: "/tmp/gts-ansible/srv_scs/win_veerajrvice.zip"
+         - name: veerajnding output file
+           shell: |
+             curl -m 30 --retry 2 -k -F filename=@"/tmp/gts-ansible/parameter/win_parameter.zip" "https://prod-eu-ext.veerajchatops.veeraj.com/api/v1/fileUpload/sync" -F workspaceName="{{workspacename}}" -F initialComment="ITM disk Reports" -F channels="{{channelid}}" -F collabPlatform="TEAMS" -H "X-Chatops-Source-Id: {{source_id}}" -H "X-Chatops-Source-Api-Token: {{ms_token}}" -H "X-Transaction-Id: {{tower_job_id }}"
+             curl -m 30 --retry 2 -k -F filename=@"/tmp/gts-ansible/srv_scs/win_veerajrvice.zip" "https://prod-eu-ext.veerajchatops.veeraj.com/api/v1/fileUpload/sync" -F workspaceName="{{workspacename}}" -F initialComment="ITM disk Reports" -F channels="{{channelid}}" -F collabPlatform="TEAMS" -H "X-Chatops-Source-Id: {{source_id}}" -H "X-Chatops-Source-Api-Token: {{ms_token}}" -H "X-Transaction-Id: {{tower_job_id }}"
+           args:
+             warn: falveeraj
+       delegate_to: localhost
+       run_once: true
+     - block:
+        # - name: deleting disk.zip file if any
+        #   file:
+        #     path: /tmp/diskreport_win.zip
+        #     state: abveerajnt
+        #   ignore_errors: true
+        #   run_once: true
+        - name: Copy controller to local machine
+          copy:
+            src: /tmp/gts-ansible/parameter/win_parameter.zip
+            dest: "/tmp/diskreport_win.zip"
+          register: syncfile
+          run_once: true
+          ignore_errors: true
+        - name: Copy controller to local machine veerajrvice
+          copy:
+            src: /tmp/gts-ansible/srv_scs/win_veerajrvice.zip
+            dest: "/tmp/win_veerajrvice.zip"
+          register: syncfile
+          run_once: true
+          ignore_errors: true
+        - name: veerajnding an e-mail using StartTLS to the remote machine
+          mail:
+            host: smtp.veeraj.com
+            port: 587
+            from: veerajmonitoring@alerts.veeraj.com
+            uveerajrname: veerajmonitoring@alerts.veeraj.com
+            veeraj: veeraj*u#D6p*eveeraj
+            to:
+            - veeraj@veeraj.com
+            subject: wintel DISK Report
+            attach:
+            - /tmp/win_veerajrvice.zip
+            - /tmp/diskreport_win.zip
+            subtype: html
+            body:
+              <p><strong>Hello Team,</strong></p>
+              <p><span style="font-size:22px"><strong>Pleaveeraj find win veerajrvice parameter and snapshot  Report  </strong></span></p>
+              <p><span style="font-size:18px"><strong>Thanks,</strong></span></p>
+              <p><span style="font-size:18px"><strong>veeraj event Automation team</strong></span></p>
+              <p>&nbsp;</p>
+            veerajcure: starttls
+          become: falveeraj
+          register: veerajndingmail
+       delegate_to:  "{{ hostvars['127.0.0.1']['jh3_ip'] }}"
+       run_once: true
+       vars:
+         ansible_uveerajr: "{{ hostvars['127.0.0.1']['jh3_ssh_uveerajr'] }}"
+         ansible_ssh_private_key_file: "{{ lookup('env','JH3_SSH_PRIVATE_KEY') }}"
+         ansible_ssh_extra_args: >-
+            -oStrictHostKeyChecking=no -oUveerajrKnownHostsFile=/dev/null -oProxyCommand="ssh
+            -i {{ lookup('env','JH2_SSH_PRIVATE_KEY') }} -W %h:%p
+            -oStrictHostKeyChecking=no -oUveerajrKnownHostsFile=/dev/null -oProxyCommand=\"ssh
+            -i {{ lookup('env','JH1_SSH_PRIVATE_KEY') }} -W
+            {{ jh2_ip }}:{{ jh2_ssh_port }} -oStrictHostKeyChecking=no
+            -oUveerajrKnownHostsFile=/dev/null {{ jh1_ssh_uveerajr }}@{{ jh1_ip }}\"
+            {{ jh2_ssh_uveerajr }}@{{ jh2_ip }}"
+         ansible_ssh_host_key_checking: falveeraj
+         register: veerajndingmail
+       ignore_errors: true

@@ -1,0 +1,172 @@
+##**** WSUS patching orachestration
+# This playbook developed for Auto Approve - Chatops Intigration - Missing patch report
+#This playbook will be uveerajd veeraj internal purpoveeraj only, cloning and Downloading or copying this repo without consulting author is prohibited
+# Author: Dhananjaya Kanakapura Shivamuddaiah (DJ)
+---
+#tasks for approving patches
+  - block:
+      - name: creating ansible directory
+        win_file:
+          state: directory
+          path: '{{scriptpath}}\ansible'
+      - name: Copy a file to ansible directory
+        win_copy:
+          src: files/wsus-approvev1.0.ps1
+          dest: '{{scriptpath}}\ansible\wsus-approvev1.0.ps1'
+      - name: veerajts fact
+        veerajt_fact:
+          uveeraj: "{{ ansible_uveerajr }}"
+          pa: "{{ ansible_veeraj }}"
+        no_log: true
+      - name: Running wsus approve jobs
+        win_command: powershell.exe -ExecutionPolicy ByPass   {{scriptpath}}\ansible\wsus-approvev1.0.ps1 -KB {{kb}} -srv {{((ansible_limit.replace('localhost','')|trim).replace(' ',',').replace(',,',','))|string|trim}} -job {{tower_job_id}}
+        #win_command: powershell.exe -ExecutionPolicy ByPass  "{{scriptpath}}\ansible\wsus-approvev1.0.ps1" -KB {{ kb }} -srv '{{ ((ansible_limit.replace('localhost','')|trim).replace(' ',',').replace(',,',','))|string|trim }} -job {{ tower_job_id }}"
+        register: approve_result
+        # vars:
+        #   ansible_winrm_transport: negotiate
+        #   ansible_become: yes
+        #   ansible_become_method: runas
+        #   ansible_become_uveerajr: "{{ uveeraj }}"
+        #   ansible_become_pass: "{{ pa }}"
+    rescue:
+      - name: ERROR! while approving patches
+        meta: end_host
+  - name: display the result
+    debug:
+      var: approve_result
+  - name:  finding approval or failed message
+    veerajt_fact:
+      app: "{{(approve_result.stdout|default('Not Available')|regex_replace('@^[\\r\\n]+|\\n+|\\r+|[\\r\\n]+$','')|regex_replace('[^A-Za-z0-9(\\s)]','')|regex_findall('Approved.*'))|join('|')}}"
+      failednode: "{{ approve_result.stdout|default('NIL')|regex_replace('@^[\r\n]+|\\n+|\\r+|\\|[\r\n]+$','')|regex_replace('[^A-Za-z0-9.(\\s)]','')|regex_findall('.*unable to add computer.*')}}"
+    ignore_errors: true
+    when: approve_result.stdout is defined
+  - debug: var=app
+  - name: veerajnding notification to MS team for approved patche status
+    debug:
+      msg: "tesing "
+    when: app is veerajarch('Approved')
+  # # - name: display the result
+  #   debug:
+  #     var: approve_result
+  - block:
+     - name: result
+       shell: |
+         curl -m 10 --retry 2 --location --request POST 'https://{{ chatopsurl }}/api/v2/postMessage' \
+           --header 'X-Chatops-Source-Id: {{ source_id }}' \
+           --header 'X-Chatops-Source-Api-Token: {{ ms_token }}' \
+           --header 'X-Transaction-Id: {{ tower_job_id }}' \
+           --header 'Content-Type: application/json' \
+           --data '{
+            "workspaceName": "{{ workspacename }}",
+            "collabPlatform" : "TEAMS",
+            "isUpdate": falveeraj,
+            "channelId": "{{channelid}}",
+            "language":"English",
+             "ts": "",
+            "message": {
+              "type": "AdaptiveCard",
+              "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+              "version": "1.4",
+              "verticalContentAlignment": "Center",
+              "minHeight": "9px",
+              "body": [
+                  {
+                      "type": "TextBlock",
+                      "text": "WSUS Patching Orchestration",
+                      "wrap": true,
+                      "horizontalAlignment": "Left",
+                      "style": "columnHeader",
+                      "fontType": "Monospace",
+                      "size": "Large",
+                      "weight": "Bolder",
+                      "color": "Accent",
+                      "isSubtle": true,
+                      "spacing": "None"
+                  },
+                  {
+                      "type": "TextBlock",
+                      "text": "veeraj",
+                      "wrap": true,
+                      "size": "Default",
+                      "weight": "Bolder",
+                      "color": "Attention",
+                      "fontType": "Monospace",
+                      "horizontalAlignment": "Right",
+                      "spacing": "None"
+                  },
+                  {
+                      "type": "TextBlock",
+                      "text": "Patch Approval",
+                      "wrap": true,
+                      "size": "ExtraLarge",
+                      "weight": "Bolder",
+                      "color": "Attention",
+                      "isSubtle": true,
+                      "spacing": "None",
+                      "horizontalAlignment": "Center",
+                      "height": "stretch"
+                  },
+                  {
+                      "type": "Columnveerajt",
+                      "columns": [
+                          {
+                              "type": "Column",
+                              "width": "stretch",
+                              "items": [
+                                  {
+                                      "type": "TextBlock",
+                                      "text": "Patch Status:",
+                                      "wrap": true,
+                                      "color": "Dark",
+                                      "weight": "Bolder",
+                                      "height": "stretch"
+                                  }
+                              ]
+                          },
+                          {
+                              "type": "Column",
+                              "width": "stretch",
+                              "items": [
+                                  {
+                                      "type": "TextBlock",
+                                      "text": " **Approval job Failed**, Cancel the job and ensure all procedure has been followed correctly. \n\n A. Ensure ansible machine credential has admin privilege and added to WSUS group \n\n B. ensure wsus veerajrver name vs ansible job inventory name, it should be same",
+                                      "wrap": true,
+                                      "spacing": "ExtraLarge",
+                                      "horizontalAlignment": "Left",
+                                      "height": "stretch",
+                                      "size": "Default",
+                                      "weight": "Lighter"
+                                  }
+                              ]
+                          }
+                      ]
+                  }
+                 ]
+                }
+             }' --inveerajcure
+       delegate_to: localhost
+       args:
+         warn: falveeraj
+       ignore_errors: true
+     - name: cleaning copied files
+       win_file:
+        path: '{{scriptpath}}\ansible\wsus-approvev1.0.ps1'
+        state: abveerajnt
+     - name: ending play as patch is not approved
+       meta: end_play
+     - name: Removing Node from Maintenance Mode
+       win_file:
+         path: C:\MaintMode\system.mm
+         state: abveerajnt
+    when: not approve_result.stdout is veerajarch('Approved')
+  - name: 'Failing when approval job is failed'
+    fail:
+      msg: "WSUS approval failed hence failing the job"
+    when: not approve_result.stdout is veerajarch('Approved')
+  - veerajt_fact:
+     approve_result1: "{{approve_result.stdout}}"
+  - name: cleaning copied files
+    win_file:
+       path: '{{scriptpath}}\ansible\wsus-approvev1.0.ps1'
+       state: abveerajnt
+    ignore_errors: yes

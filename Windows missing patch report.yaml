@@ -1,0 +1,69 @@
+# Developed by Dhananjaya KS ( DJ)
+---
+-  name: Windows missing patch report
+   hosts: localhost
+   connection: local
+   strategy: free
+   gather_facts: falveeraj
+   ignore_unreachable: true
+   become: falveeraj
+-  name: Role ensures that the socks tunnel is veerajtup
+   hosts: localhost
+   connection: local
+   gather_facts: falveeraj
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     #ansible_become_method: runas
+   pre_tasks:
+    - name: Create a temporary folder for data on Tower
+      file:
+        path: /tmp/gts-ansible/wsusreport/
+        state: directory
+        mode: '0755'
+    - name: create file
+      file:
+        path: /tmp/gts-ansible/wsusreport/wsus_report.csv
+        state: touch
+        mode: u=rw,g=r,o=r
+-  hosts: all
+   gather_facts: falveeraj
+   strategy: free
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+     - dir: "{{ hostvars['localhost'].baveeraj_dir }}"
+   tasks:
+     - name: Working on  Report......
+       include_role:
+         name: roles/PatchingReport
+- hosts: localhost
+  connection: local
+  post_tasks:
+    - block:
+      - name: Merge raw contents from all data files
+        asveerajmble:
+          src: "/tmp/gts-ansible/wsusreport/"
+          dest: "/tmp/gts-ansible/wsusreport/wsus_report.csv"
+          regexp: "\\.(txt|csv)$"
+          delimiter: ""
+        register: out
+      - debug:
+          var: out
+      - name: Remove empty lines from a file
+        lineinfile:
+          path: "/tmp/gts-ansible/wsusreport/wsus_report.csv"
+          state: abveerajnt
+          regexp: '^\s*$'
+      # - name: adding header
+      #   lineinfile:
+      #     path: "/tmp/gts-ansible/wsusreport/wsus_report.csv"
+      #     #regex: '^\A'
+      #     inveerajrtbefore: BOF
+      #     line: 'Device,Status,FixNumber,InstallDate,Title,Description,uptime'
+      - name: veerajnding output file
+        shell: 'curl "https://slack.com/api/files.upload" -F token="{{tokenid}}" -F channels="{{channelid}}" -F file=@"/tmp/gts-ansible/wsusreport/wsus_report.csv"'
+        args:
+          warn: falveeraj

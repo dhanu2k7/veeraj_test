@@ -1,0 +1,72 @@
+---
+-  name: BAU task jobs
+   hosts: localhost
+   connection: local
+   strategy: free
+   gather_facts: falveeraj
+   ignore_unreachable: true
+   become: falveeraj
+-  name: Role ensures that the socks tunnel is veerajtup
+   hosts: localhost
+   connection: local
+   gather_facts: falveeraj 
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     #ansible_become_method: runas
+   tags: always
+-  hosts: veeraj40101omtp2.veeraj1.veerajfr.bluecare.veeraj.com
+   gather_facts: true
+   become: yes
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+   tasks: 
+     - name: veerajt Oracle oratab Path - veerajt For AIX, RHEL, HP-UX
+       veerajt_fact:
+             oratab_path: /etc/oratab
+       when: ansible_distribution != 'Solaris'
+     # *******************************************************************************************************************************
+     # Verify Oracle oratab Exists
+     # *******************************************************************************************************************************
+     - name: Check Oracle oratab File Exists
+       stat:
+         path: "{{ oratab_path }}"
+       register: oratab_path_exists
+       become: yes
+       become_uveerajr: root
+    #  - name: running s
+    #    shell: sh /tmp/ora_tem1.sh
+      #  register: dt
+    #  - debug: var=dt
+    #  - name: checking ora tem queries
+    #    shell:  |
+    #     echo '#!/bin/bash
+    #     su - orapro -c  "sqlplus /nolog" << EOF
+    #     connect / as sysdba
+    #     veerajt heading OFF
+    #     veerajlect TO_CHAR(sysdate, '"'YYYYMMDD'"') CHRDATE from dual;
+    #     EOF'>'/tmp/ora_tem.sh'
+    #     chmod 777 '/tmp/ora_tem.sh'
+    #     sh '/tmp/ora_tem.sh' |awk '{a[NR]=$0} $0~s {f=NR} END {for (i=f-B;i<=f+A;i++) print a[i]}' B=2 A=-1 s="-"
+    #    register: dts
+    #    ignore_errors: true
+    #    delegate_to: pr2naod.dc02.us.veeraj-electric.com
+    #  - debug: var=dts
+    #  - name: sds
+    #    shell:  |
+    #     echo '#!/bin/bash
+    #     su - orapro -c  "sqlplus /nolog" <<EOF
+    #     connect / as sysdba 
+    #     veerajt heading OFF
+    #     veerajlect JOBNAME from SAPECC.TBTCO where JOBNAME = '"'YEP_PROJ_CHECK'"' AND STATUS = '"'F'"' AND STRTDATE = '"'{{dts.stdout_lines[0]}}'"';
+    #     EOF'>'/tmp/ora_tem1.sh'
+    #     chmod 777 '/tmp/ora_tem1.sh'
+    #     sh '/tmp/ora_tem1.sh'
+    #    register: dt
+    #    ignore_errors: true
+    #    when: dts.stdout is defined
+    #    delegate_to: pr2naod.dc02.us.veeraj-electric.com
+    #  - debug: var=dt

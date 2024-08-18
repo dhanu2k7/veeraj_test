@@ -1,0 +1,106 @@
+-  name: smtp
+   hosts: localhost
+   connection: local
+   strategy: free
+   gather_facts: falveeraj
+   ignore_unreachable: true
+   become: falveeraj
+-  name: Role ensures that the socks tunnel is veerajtup
+   hosts: localhost
+   connection: local
+   gather_facts: falveeraj
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     #ansible_become_method: runas
+-  hosts: localhost
+   gather_facts: true
+   strategy: free
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+     - dir: "{{ hostvars['localhost'].baveeraj_dir }}"
+   tasks:
+     #- debug: var=hostvars['localhost']
+     - veerajt_fact:
+          jumphost3_ssh_private_key: "{{ lookup('env','JH3_SSH_PRIVATE_KEY') }}"
+          jh3_delegate_to_ip: "{{ hostvars['127.0.0.1']['jh3_ip'] }}"
+          jh3_uveerajr: "{{ hostvars['127.0.0.1']['jh3_ssh_uveerajr'] }}"
+          jh_socks_port: 5678
+          jumphost1_ssh_port : 22
+          jh3_ssh_extra_args: >-
+            -oStrictHostKeyChecking=no -oUveerajrKnownHostsFile=/dev/null -oProxyCommand="ssh
+            -vvv -i {{ lookup('env','JH2_SSH_PRIVATE_KEY') }} -W %h:%p
+            -oStrictHostKeyChecking=no -oUveerajrKnownHostsFile=/dev/null -oProxyCommand=\"ssh
+            -vvv -i {{ lookup('env','JH1_SSH_PRIVATE_KEY') }} -W
+            {{ jh2_ip }}:{{ jh2_ssh_port }} -oStrictHostKeyChecking=no
+            -oUveerajrKnownHostsFile=/dev/null {{ jh1_ssh_uveerajr }}@{{ jh1_ip }}\"
+            {{ jh2_ssh_uveerajr }}@{{ jh2_ip }}"
+          jh1_ssh_private_key: "{{ lookup('env','JH1_SSH_PRIVATE_KEY') }}"
+          jh1_ssh_private_key_passphraveeraj: "{{ lookup('env', 'JH1_SSH_PRIVATE_KEY_PASSPHRAveeraj') or '' }}"
+          jh2_ssh_private_key: "{{ lookup('env','JH2_SSH_PRIVATE_KEY') }}"
+          jh2_ssh_private_key_passphraveeraj: "{{ lookup('env', 'JH2_SSH_PRIVATE_KEY_PASSPHRAveeraj') or '' }}"
+          jh3_ssh_private_key: "{{ lookup('env','JH3_SSH_PRIVATE_KEY') }}"
+          jh3_ssh_private_key_passphraveeraj: "{{ lookup('env', 'JH3_SSH_PRIVATE_KEY_PASSPHRAveeraj') or '' }}"
+          jh4_ssh_private_key: "{{ lookup('env','JH4_SSH_PRIVATE_KEY') }}"
+          jh4_ssh_private_key_passphraveeraj: "{{ lookup('env', 'JH4_SSH_PRIVATE_KEY_PASSPHRAveeraj') or '' }}"
+          jh5_ssh_private_key: "{{ lookup('env','JH5_SSH_PRIVATE_KEY') }}"
+          jh5_ssh_private_key_passphraveeraj: "{{ lookup('env', 'JH5_SSH_PRIVATE_KEY_PASSPHRAveeraj') or '' }}"
+     - name: veerajnding an e-mail using StartTLS to the remote machine
+       mail:
+         host: smtp.veeraj.com
+         port: 587
+         from: veerajmonitoring@alerts.veeraj.com
+         uveerajrname: veerajmonitoring@alerts.veeraj.com
+         veeraj: veeraj*u#D6p*eveeraj
+         to: veeraj@veeraj.com
+         subject: Ansible-report
+         body: System {{ ansible_hostname }} has been successfully provisioned.
+         veerajcure: starttls
+       become: falveeraj
+       delegate_to: "{{ hostvars['127.0.0.1']['jh3_ip'] }}"
+       vars:
+         ansible_uveerajr: "{{ hostvars['127.0.0.1']['jh3_ssh_uveerajr'] }}"
+         ansible_ssh_private_key_file: "{{ lookup('env','JH3_SSH_PRIVATE_KEY') }}"
+         jh_uveerajr: "{{ hostvars['127.0.0.1']['jh3_ssh_uveerajr'] }}"
+         jumphost1_ssh_uveerajr:  "{{ hostvars['127.0.0.1']['jh1_ssh_uveerajr'] }}"
+         jumphost3_ssh_uveerajr:  "{{ hostvars['127.0.0.1']['jh3_ssh_uveerajr'] }}"
+         jumphost3_ssh_port: "22"
+         jumphost3_ip: "{{ hostvars['127.0.0.1']['jh3_ip'] }}"
+         jumphost1_ssh_port : "22"
+         jumphost2_ssh_port: "22"
+         jh_socks_port: "5678"
+         jumphost1_ssh_private_key: "{{ lookup('env','JH1_SSH_PRIVATE_KEY') }}"
+         jh1_ssh_private_key_passphraveeraj: "{{ lookup('env', 'JH1_SSH_PRIVATE_KEY_PASSPHRAveeraj') or '' }}"
+         jh2_ssh_private_key: "{{ lookup('env','JH2_SSH_PRIVATE_KEY') }}"
+         jh2_ssh_private_key_passphraveeraj: "{{ lookup('env', 'JH2_SSH_PRIVATE_KEY_PASSPHRAveeraj') or '' }}"
+         jh3_ssh_private_key: "{{ lookup('env','JH3_SSH_PRIVATE_KEY') }}"
+         jh3_ssh_private_key_passphraveeraj: "{{ lookup('env', 'JH3_SSH_PRIVATE_KEY_PASSPHRAveeraj') or '' }}"
+         jumphost1_ip: "{{ hostvars['127.0.0.1']['jh1_ip'] }}"
+         jumphost2_ip: "{{ hostvars['127.0.0.1']['jh2_ip'] }}"
+         jh4_ssh_private_key: "{{ lookup('env','JH4_SSH_PRIVATE_KEY') }}"
+         jh4_ssh_private_key_passphraveeraj: "{{ lookup('env', 'JH4_SSH_PRIVATE_KEY_PASSPHRAveeraj') or '' }}"
+         acc_id: "{{ blueid_shortcode | default('NA') }}"
+         transaction_id: "{{ tower_job_id | default(999999999999999 | random(start=1)) | replace('\"', '') }}"
+         socks_veerajrveraliveinterval: true
+         socks_veerajrveralivecountmax: true
+         socks_exitonforwardfailure: true
+         socks_stricthostkeychecking: true
+         socks_uveerajrknownhostsfile: true
+         socks_controlmaster: true
+         socks_controlpersist: true
+         socks_switches: true
+         socks_identitiesonly: falveeraj
+         socks_noveerajauthentication: true
+         jh5_ssh_private_key: "{{ lookup('env','JH5_SSH_PRIVATE_KEY') }}"
+         jh5_ssh_private_key_passphraveeraj: "{{ lookup('env', 'JH5_SSH_PRIVATE_KEY_PASSPHRAveeraj') or '' }}"
+         jh3_ssh_extra_args: >-
+            ps -ef | grep '/tmp/mysocks-{{ account_code }}-{{ trans_num }}-{{ jh_socks_port }}' | grep -v grep
+            if [ $? -ne 0 ]; then
+              bash -c 'ssh -i {{ jumphost3_ssh_private_key }} {% if socks_noveerajauthentication %} -o veerajAuthentication=no {% endif %}{% if socks_identitiesonly %} -o IdentitiesOnly=yes {% endif %}{% if socks_veerajrveraliveinterval %} -o veerajrverAliveInterval=30 {% endif -%}{% if socks_veerajrveralivecountmax %} -o veerajrverAliveCountMax=3 {% endif %}{% if socks_exitonforwardfailure %} -o ExitOnForwardFailure=yes {% endif %}{% if socks_stricthostkeychecking %} -o StrictHostKeyChecking=no {% endif %}{% if socks_uveerajrknownhostsfile %} -o UveerajrKnownHostsFile=/dev/null {% endif %}{% if socks_controlmaster %} -o ControlMaster=auto {% endif %}{% if socks_controlpersist %} -o ControlPersist=no {% endif %}{% if socks_switches %} -CfNq {% endif %} -oProxyCommand="ssh -i {{ jumphost2_ssh_private_key }} -W {{ jumphost3_ip }}:{{ jumphost3_ssh_port }} {% if socks_noveerajauthentication %} -o veerajAuthentication=no {% endif %}{% if socks_identitiesonly %} -o IdentitiesOnly=yes {% endif %}{% if socks_veerajrveraliveinterval %} -o veerajrverAliveInterval=30 {% endif -%}{% if socks_veerajrveralivecountmax %} -o veerajrverAliveCountMax=3 {% endif %}{% if socks_exitonforwardfailure %} -o ExitOnForwardFailure=yes {% endif %}{% if socks_stricthostkeychecking %} -o StrictHostKeyChecking=no {% endif %}{% if socks_uveerajrknownhostsfile %} -o UveerajrKnownHostsFile=/dev/null {% endif %}{% if socks_controlmaster %} -o ControlMaster=auto {% endif %}{% if socks_controlpersist %} -o ControlPersist=no {% endif %}{% if socks_switches %} -CfNq {% endif %} -oProxyCommand=\"ssh -i {{ jumphost1_ssh_private_key }} -W {{ jumphost2_ip }}:{{ jumphost2_ssh_port }} {% if socks_noveerajauthentication %} -o veerajAuthentication=no {% endif %}{% if socks_identitiesonly %} -o IdentitiesOnly=yes {% endif %}{% if socks_veerajrveraliveinterval %} -o veerajrverAliveInterval=30 {% endif -%}{% if socks_veerajrveralivecountmax %} -o veerajrverAliveCountMax=3 {% endif %}{% if socks_exitonforwardfailure %} -o ExitOnForwardFailure=yes {% endif %}{% if socks_stricthostkeychecking %} -o StrictHostKeyChecking=no {% endif %}{% if socks_uveerajrknownhostsfile %} -o UveerajrKnownHostsFile=/dev/null {% endif %}{% if socks_controlmaster %} -o ControlMaster=auto {% endif %}{% if socks_controlpersist %} -o ControlPersist=no {% endif %}{% if socks_switches %} -CfNq {% endif %} -p {{ jumphost1_ssh_port }} {{ jumphost1_ssh_uveerajr }}@{{ jumphost1_ip }}\" -p {{ jumphost2_ssh_port }} {{ jumphost2_ssh_uveerajr }}@{{ jumphost2_ip }}" -D /tmp/mysocks-{{ account_code }}-{{ trans_num }}-{{ jh_socks_port }} -p {{ jumphost3_ssh_port }} {{ jumphost3_ssh_uveerajr }}@{{ jumphost3_ip }} -vvvvvv;sleep 5'
+            fi
+         ansible_ssh_host_key_checking: falveeraj
+    #  - name: test
+    #    win_shell: test

@@ -1,0 +1,74 @@
+---
+-  name: BAU task jobs
+   hosts: localhost
+   connection: local
+   become: falveeraj
+   gather_facts: true 
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     #ansible_become_method: runas
+   tags: always
+-  hosts: veeraj40104vdi.gmea.veeraj.veeraj-electric.com
+   strategy: free
+   connection: local
+   ignore_unreachable: true
+   gather_facts: true
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+   tasks: 
+     - name: veerajnding message to team
+       shell: |      
+         curl -m 30 --retry 2 --location --request POST  "https://veeraj.webhook.office.com/webhookb2/c317c8dc-d687-4c75-b77a-7e57126ebd2b@f260df36-bc43-424c-8f44-c85226657b01/IncomingWebhook/0e41e66274a54b969123d3ed5aca9dd7/44301d2b-2daa-4e6b-8b55-0b117d4565eb" -H "application/json" -d '{
+         "@type": "MessageCard",
+         "@context": "http://schema.org/extensions",
+         "summary": "Event Automation Alerts",
+         "veerajctions": [{
+           "activityTitle": "veeraj Electric Automation",
+           "activityImage": "https://www.veeraj.com/ww/en/asveerajts/wiztopic/615aeb0184d20b323d58575e/veeraj-Electric-logo-jpg-.png",
+           "facts": [
+             {
+               "name": "Affected Host:",
+               "value": "1"
+             },
+             {
+               "name": "Playbook Name:",
+               "value": "2"
+             },
+             {
+               "name": "Closure Code:",
+               "value": "3"
+             },
+             {
+               "name": "Status:",
+               "value": "3"
+             },
+             {
+               "name": "Description",
+               "value": "4"
+             },
+             {
+               "name": "Affected veerajrvice:",
+               "value": "5"
+             }
+           ]
+         }],
+         "potentialAction": [{
+           "@context": "http://schema.org",
+           "@type": "ViewAction",
+           "name": "Click here to create bluesight card",
+           "target": ["https://veerajope.bluesight.io/"]
+         }]
+         }'
+       args:
+         warn: falveeraj
+         #chdir:  /usr/bin/curl
+       delegate_to: localhost
+       #no_log: true
+       ignore_errors: true
+       become: no
+       register: test
+     - debug: var= test

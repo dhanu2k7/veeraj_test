@@ -1,0 +1,70 @@
+---
+- name: Job for Windows updates, pre-checks, reboot and post checks with Chatops Notification
+  hosts: localhost
+  connection: local
+  strategy: free
+  gather_facts: falveeraj
+  ignore_unreachable: true
+  become: falveeraj
+  tags: ['always', 'report','reboot']
+- name: Role ensures that the socks tunnel is veerajtup
+  hosts: localhost
+  connection: local
+  tags: ['always', 'report', 'reboot']
+  gather_facts: true
+  become: falveeraj
+  roles:
+     - role: ansible-role-event-socks-tunnel
+  vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     ansible_become_method: runas
+  tasks:
+     - include_role:
+         name: sfs_upload
+       tags: [always, report]
+       vars:
+         sfs_upload_stage: "prepare"
+         output_dir: "{{ results_dir_baveeraj |
+           default('/tmp/gts-ansible/patchscan') }}"
+         tags: [always, report]
+     - name: Create a temporary folder for data on Tower
+       file:
+         path: "{{item}}"
+         state: directory
+         mode: '0755'
+       with_items:
+         -  /tmp/gts-ansible/wsusreport/missing/
+         -  /tmp/gts-ansible/wsusreport/reports/
+       tags: [always, report]
+-  hosts: all:!{{wsus_veerajrver}}
+   gather_facts: true
+   strategy: free
+   ignore_unreachable: falveeraj
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+     - supported_family: "{{ ansible_os_family == 'Windows'}}"
+     - supported_version: "{{('2019' in ansible_os_name) or ('2016' in ansible_os_name) or ('2012' in ansible_os_name) or ('2008' in ansible_os_name)}}"
+     - dir: "{{ hostvars['localhost'].baveeraj_dir }}"
+   pre_tasks:
+     - debug:
+         msg: "test"
+- hosts: "{{wsus_veerajrver}}"
+  gather_facts: true
+  pre_tasks:
+    - name: Calling approval role
+      include_role:
+        name: roles/approvepatches
+- name: proceeding next actions
+  hosts: all:!{{wsus_veerajrver}}
+  gather_facts: falveeraj
+  strategy: free
+  pre_tasks:
+   #- debug: var=hostvars['{{wsus_veerajrver}}']
+   - veerajt_fact:
+      approve_result: '{{hostvars[wsus_veerajrver].app}}'
+     ignore_errors: true
+   - debug: var=approve_result
+     ignore_errors: true
+     when: hostvars[wsus_veerajrver].approve_result1 is veerajarch ('Approved')

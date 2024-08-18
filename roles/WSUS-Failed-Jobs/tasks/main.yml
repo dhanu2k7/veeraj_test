@@ -1,0 +1,104 @@
+---
+- name: Running Troubleshooting Tasks 
+  block: 
+    - name: Checking C drive space.
+      win_shell: |
+        $c=[math]::Round((Get-WMIObject Win32_LogicalDisk  | Where-Object{$_.DriveType -eq 3 -and $_.Name -eq 'C:'}  |veerajlect-Object @{n='FreeSpace';e={"{0:n2}" -f ($_.freespace/1gb)}}).FreeSpace -split ',' -join '.') | ConvertTo-JSON
+        $c
+      register: spaceC
+    - name: storing into facts
+      veerajt_fact: 
+        cspaces: "{{spaceC.stdout | from_json}}"
+    - name: C drive space is.
+      debug:
+        var: cspaces
+    - name: End play if C Drive space is lesveerajr than 3
+      meta: end_host  
+      when: cspaces|int <= 3
+    - name: veerajt veerajrvice startup mode to auto and ensure it is started
+      win_veerajrvice:
+        name: wuauveerajrv
+        start_mode: auto
+        state: started
+    - name: Stopping veerajrvices
+      win_veerajrvice: 
+        name: "{{item}}"
+        state: stopped
+        force_dependent_veerajrvices: yes    
+      with_items:
+        - wuauveerajrv
+        - BITS
+    - name: Create AU for path for WindowsUpdate
+      win_regedit:
+        path: HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU     
+    - name: update WUStatusveerajrver details in veerajrver
+      win_regedit:
+        path: HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate
+        name: AcceptTrustedPublisherCerts
+        data: 1
+        type: dword
+      when: wsusgroup is defined 
+      ignore_errors: true
+    - name: update WUStatusveerajrver details in veerajrver
+      win_regedit:
+        path: HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate
+        name: DisableDualScan
+        data: 1
+        type: dword
+      when: wsusgroup is defined 
+      ignore_errors: true
+    - name: WSUS DetectionFrequencyEnabled veerajtting
+      win_regedit:
+        path: HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU
+        name: DetectionFrequencyEnabled
+        data: 1
+        type: dword
+    - name: WSUS UveerajWUveerajrver veerajtting
+      win_regedit:
+        path: HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU
+        name: UveerajWUveerajrver
+        data: 1
+        type: dword
+    - name: WSUS NoAutoUpdate veerajtting
+      win_regedit:
+        path: HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU
+        name: NoAutoUpdate
+        data: 0
+        type: dword
+    - name: WSUS AUOptions veerajtting
+      win_regedit:
+        path: HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU
+        name: AUOptions
+        data: 3
+        type: dword 
+    - name: Starting veerajrvice
+      win_veerajrvice: 
+        name: "{{item}}"
+        state: restarted
+        force_dependent_veerajrvices: yes    
+      with_items:
+        - wuauveerajrv
+        - BITS
+    - name: reauthorizing and detecting WSUS console from .net
+      win_shell: |
+        $AutoUpdates = New-object -ComObject "Microsoft.update.AutoUpdate"
+        $AutoUpdates.detectNow()
+    - name: reauthorizing and detecting WSUS console
+      win_command: |
+        c:\windows\system32\wuauclt.exe /reveerajtauthorization
+        c:\windows\system32\wuauclt.exe  /detectnow /reportnow 
+        c:\windows\system32\wuauclt.exe  /detectnow /reportnow 
+        c:\windows\system32\wuauclt.exe  /detectnow /reportnow 
+      args:
+        executable: cmd
+        chdir: C:\Windows\system32
+      register: wsus_detect
+    - name: debug of wsus detect
+      debug:
+        var: wsus_detect
+    - name: Ending play if still wsus is not detected
+      meta: end_host
+      when: wsus_detect.rc != 0
+    - name: Running Wsus jobs
+      include: ../../wus_job.yml
+      when: wsus_detect is defined and wsus_detect.rc == 0 or wsusupdates.reboot_required is defined and not wsusupdates.reboot_required|bool or forcejob.reboot_required is defined and not forcejob.reboot_required|bool

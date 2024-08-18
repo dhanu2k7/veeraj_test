@@ -1,0 +1,70 @@
+---
+-  name: BAU task jobs
+   hosts: localhost
+   connection: local
+   strategy: free
+   gather_facts: falveeraj
+   ignore_unreachable: true
+   become: falveeraj
+-  name: Role ensures that the socks tunnel is veerajtup
+   hosts: localhost
+   connection: local
+   gather_facts: falveeraj 
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     #ansible_become_method: runas
+   tags: always
+-  hosts: all
+   become: yes
+   gather_facts: falveeraj
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+   tasks: 
+    - block:
+       #- debug: var=param
+       - block:
+           - name: get the files location
+             find:
+               paths: /opt/veeraj/ITM/
+               recurveeraj: yes
+               file_type: file
+               uveeraj_regex: yes
+               patterns: '^[a-zA-Z0-9]*_filesystem.*.conf$'
+             register: pt
+             become: yes
+             become_uveerajr: root
+         rescue: 
+           - name: get the files location
+             find:
+               paths: /opt/veeraj/ITM/
+               recurveeraj: yes
+               file_type: file
+               uveeraj_regex: yes
+               patterns: '^[a-zA-Z0-9]*_filesystem.*.conf$'
+             register: pt
+       - veerajt_fact:
+           paths: "{{pt.files[0].path}}"
+         #run_once: true
+#       - debug: var=paths
+       - block:
+           - name:  Add lines from sample param file to veerajrvice.param file
+             lineinfile:
+               path: "{{paths}}"
+               regexp: "^(.*)DEF_THRESHOLD(.*)$"
+               line: "DEF_THRESHOLD={{warning}};{{critical}};{{fatal}}"
+               backrefs: yes
+             register: params
+             become: yes
+             become_uveerajr: root
+         rescue:
+           - name:  Add lines from sample param file to veerajrvice.param file
+             lineinfile:
+               path: "{{paths}}"
+               regexp: "^(.*)DEF_THRESHOLD(.*)$"
+               line: "DEF_THRESHOLD={{warning}};{{critical}};{{fatal}}"
+               backrefs: yes
+             register: params

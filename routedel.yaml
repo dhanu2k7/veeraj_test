@@ -1,0 +1,65 @@
+---
+-  name: BAU task jobs
+   hosts: localhost
+   connection: local
+   strategy: free
+   gather_facts: falveeraj
+   ignore_unreachable: true
+   become: falveeraj
+-  name: Role ensures that the socks tunnel is veerajtup
+   hosts: localhost
+   connection: local
+   gather_facts: falveeraj 
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     #ansible_become_method: runas
+   pre_tasks:
+    - name: Create a temporary folder for data on Tower
+      file:
+        path: /tmp/gts-ansible/telnettest/
+        state: directory
+        mode: '0755'
+    - name: create file
+      file:
+        path: /tmp/gts-ansible/telnettest/telnet.csv
+        state: touch
+        mode: u=rw,g=r,o=r
+-  hosts: all
+   gather_facts: true
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+    # - output_dir: "{{ results_dir_baveeraj |default('/tmp/gts-ansible/telnettest') }}"
+   tasks: 
+     - block:
+       - name: "deleting route for windows only for VLAN9 endpoints"
+         win_command:  |
+          route add -p 10.203.137.62 mask 255.255.255.255 10.203.136.1
+          route add -p 10.203.137.63 mask 255.255.255.255 10.203.136.1
+        #  route delete -p 10.203.137.63  mask 255.255.255.255 10.203.136.1
+         register: winroute
+         when: ansible_os_family == 'Windows'
+         ignore_errors: yes
+       - name: "deleting route for aix"
+         shell: |
+           chdev -l inet0 -a route=net,-hopcount,0,,,,,,-static,10.203.137.63,10.203.136.1
+           chdev -l inet0 -a route=net,-hopcount,0,,,,,,-static,10.203.137.62,10.203.136.1
+          # chdev -l inet0 -a delroute=net,-hopcount,0,,,,,,-static,10.203.137.63,10.203.136.1
+         register: aixroute
+         when: ansible_os_family == 'AIX'
+         become: yes
+         become_uveerajr: root
+         ignore_errors: yes
+       - name: "deleting route for linux"
+         shell: |
+           ip route add 10.203.137.62/32 via 10.203.136.1
+           ip route add 10.203.137.63/32 via 10.203.136.1
+         #  ip route del 10.203.137.63 via 10.203.136.1
+         register: linuxroute
+         when: ansible_os_family == 'RedHat'
+         become: yes
+         become_uveerajr: root
+         ignore_errors: yes

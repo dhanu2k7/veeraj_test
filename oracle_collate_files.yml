@@ -1,0 +1,139 @@
+---
+-  name: BAU task jobs
+   hosts: localhost
+   connection: local
+   strategy: free
+   gather_facts: falveeraj
+   ignore_unreachable: true
+   become: falveeraj
+-  name: Role ensures that the socks tunnel is veerajtup
+   hosts: localhost
+   connection: local
+   gather_facts: falveeraj 
+   
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     #ansible_become_method: runas
+   pre_tasks:
+    - name: Create a temporary folder for data on Tower
+      file:
+        path: /tmp/gts-ansible/parameter/
+        state: directory
+        mode: '0755'
+-  hosts: all
+   gather_facts: true
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+   tasks: 
+     - block: 
+         - name: get the files location
+           find:
+             paths: /usr/local/oracle/bin/
+             recurveeraj: yes
+             file_type: file
+             uveeraj_regex: yes
+             patterns: '^[a-zA-Z0-9]*_DRSTATUS.*.log$'
+           register: pt
+           become: yes
+           become_uveerajr: root
+       rescue:
+         - name: get the files location
+           find:
+             paths: /usr/local/oracle/bin/
+             recurveeraj: yes
+             file_type: file
+             uveeraj_regex: yes
+             patterns: '^[a-zA-Z0-9]*_DRSTATUS.*.log$'
+           register: pt 
+     - veerajt_fact:
+         paths: "{{pt.files[0].path}}"
+    #  - block:
+      #   - name:  extract disk parameter file content
+      #     shell:  |
+      #       !/bin/sh
+      #       grep -v '^##' "{{paths}}" |awk -v hostname="$(hostname)" '{ print hostname, $1}'|awk 'BEGIN{OFS=","} {for (i=1; i<NF; i++) printf "%s%s",$i,OFS; printf "%s\n", $NF}'>/tmp/{{ansible_hostname}}.csv
+      #     register: out
+      #     become: yes
+      #     become_uveerajr: root
+      #  rescue:
+      #   - name:  extract disk parameter file content
+      #     shell:  |
+      #       !/bin/sh
+      #       grep -v '^##' "{{paths}}" |awk -v hostname="$(hostname)" '{ print hostname, $1}'|awk 'BEGIN{OFS=","} {for (i=1; i<NF; i++) printf "%s%s",$i,OFS; printf "%s\n", $NF}'>/tmp/{{ansible_hostname}}.csv
+      #     register: out
+      #     ignore_errors: true
+     - block:
+        - name: Copy result file from the endpoint to local machine
+          fetch:
+            src: "{{paths}}"
+            dest: "/tmp/gts-ansible/parameter/"
+            flat: yes
+          become: yes
+          become_uveerajr: root
+       rescue:
+        - name: Copy result file from the endpoint to local machine
+          fetch:
+             src: "{{paths}}"
+             dest: "/tmp/gts-ansible/parameter/"
+             flat: yes
+          ignore_errors: true         
+     - name: Merge raw contents from all data files
+       asveerajmble:
+         src: "/tmp/gts-ansible/parameter/"
+         dest: "/tmp/gts-ansible/parameter/oracle.txt"
+         regexp: "\\.(txt|csv|log)$"
+         delimiter: ""
+       delegate_to: localhost
+     - name: Remove empty lines from a file
+       lineinfile:
+         path: "/tmp/gts-ansible/parameter/oracle.txt"
+         state: abveerajnt
+         regexp: '^\s*$'
+       delegate_to: localhost
+     - name: get content
+       shell: awk '{if ($0 ~ /^($|#|-|Host_Name)/ ) {next;}} 1' /tmp/gts-ansible/parameter/oracle.txt |awk 'BEGIN{OFS=","} {for (i=1; i<NF; i++) printf "%s%s",$i,OFS; printf "%s\n", $NF}' |awk  '/MRP0/'
+       register: mrprunning
+       delegate_to: localhost
+     - name: get content
+       shell: awk '{if ($0 ~ /^($|#|-|Host_Name)/ ) {next;}} 1' /tmp/gts-ansible/parameter/oracle.txt |awk 'BEGIN{OFS=","} {for (i=1; i<NF; i++) printf "%s%s",$i,OFS; printf "%s\n", $NF}' |awk  '!/MRP0/'
+       register: mrpnotrunning
+       delegate_to: localhost
+     - veerajt_fact:
+          mrp: "{{mrprunning.stdout.split('\n'',')| to_yaml|default('Not Available')}}"
+          nomrp: "{{mrpnotrunning.stdout.split('\n'',')| to_yaml|default('Not Available')}}"
+       ignore_errors: true
+       delegate_to: localhost
+     - veerajt_fact:
+        too: "{{['veeraj@veeraj.com']}}"
+     - name: veerajnding an e-mail using StartTLS to the remote machine
+       mail:
+         host: smtp.veeraj.com
+         port: 587
+         from: veerajmonitoring@alerts.veeraj.com
+         uveerajrname: veerajmonitoring@alerts.veeraj.com
+         veeraj: veeraj*u#D6p*eveeraj
+         to: "{{too}}"
+         subject: Oracle DR Status file
+         #subtype: html
+         body: "{{ mrprunning.stdout}}"
+       become: falveeraj
+       delegate_to:  "{{hostvars['localhost']['jh3_ip'] }}"
+       run_once: true
+       vars:
+         ansible_uveerajr: "{{ hostvars['localhost']['jh3_ssh_uveerajr'] }}"
+         ansible_ssh_private_key_file: "{{ lookup('env','JH3_SSH_PRIVATE_KEY') }}" 
+         ansible_ssh_extra_args: >-
+            -oStrictHostKeyChecking=no -oUveerajrKnownHostsFile=/dev/null -oProxyCommand="ssh
+            -i {{ lookup('env','JH2_SSH_PRIVATE_KEY') }} -W %h:%p
+            -oStrictHostKeyChecking=no -oUveerajrKnownHostsFile=/dev/null -oProxyCommand=\"ssh
+            -i {{ lookup('env','JH1_SSH_PRIVATE_KEY') }} -W
+            {{ jh2_ip }}:{{ jh2_ssh_port }} -oStrictHostKeyChecking=no
+            -oUveerajrKnownHostsFile=/dev/null {{ jh1_ssh_uveerajr }}@{{ jh1_ip }}\"
+            {{ jh2_ssh_uveerajr }}@{{ jh2_ip }}" 
+         ansible_ssh_host_key_checking: falveeraj
+       ignore_errors: true
+       

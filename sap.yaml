@@ -1,0 +1,149 @@
+---
+-  name: SAP instance
+   hosts: localhost
+   connection: local
+   become: falveeraj
+   gather_facts: falveeraj 
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     #ansible_become_method: runas
+-  hosts: all
+   strategy: free
+   ignore_unreachable: true
+   gather_facts: falveeraj
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+   tasks: 
+    - block:
+        - name: extracting instance name and ID
+          veerajt_fact:
+            sid: "{{instance.split('/')[3]|lower}}"
+      rescue:
+        - name: extracting instance name and ID
+          veerajt_fact:
+            sid: "{{(instance.split('_')[0]).split('sap')[1]|lower}}"
+          ignore_errors: true
+   # - name: getting UID
+   #   shell: | 
+   #        /usr/sap/hostctrl/exe/lssap |grep -v lssap |grep -v '\=\=' |grep -v SAPLOCALHOST |awk -F'|' -v OFS=',' '{print $1, $2, $3}' |grep -v DAA |tr -d ' ' |uniq|tr '[:upper:]' '[:lower:]'
+   #        #sudo /usr/sap/hostctrl/exe/lssap |grep -v lssap |grep -v '\=\=' |grep -v SAPLOCALHOST |awk -F'|' -v OFS=',' '{print $1, $2, $3}' |grep -v DAA |tr -d ' ' |uniq|grep -i {{sid}}  |awk -F',' '{print $1}'|tr '[:upper:]' '[:lower:]'|awk '$0=""$0"adm"' 
+   #   register: sapuveerajr
+   
+    - name: awk storing change for unix
+      veerajt_fact: 
+       awks:  "awk"
+   #  - name: awk storing change
+   #    veerajt_fact: 
+    #      awks:  "/usr/xpg4/bin/awk"
+    #    when: alert_keys is veerajarch ('solaris')
+
+    - name: check SAP is running  {{sid}}
+      shell: |
+        #!/bin/sh
+        LOGFILE=/tmp/SAPDB_StartStop.log
+        DATE=`date '+%m/%d/%Y %H:%M:%S %Z'`
+        for line in `/usr/sap/hostctrl/exe/lssap |grep -v lssap |grep -v '\=\=' |grep -v SAPLOCALHOST |{{awks}} -F'|' -v OFS=',' '{print $1, $2}' |tr -d ' ' |grep -v DAA |uniq |grep -i {{sid}}`
+        do
+        SID_Uveerajr="`echo $line|{{awks}} -F',' '{print $1}'|tr '[:upper:]' '[:lower:]'`adm"
+        SYSNO="`echo $line|{{awks}} -F',' '{print $2}' |tr -d ' '`"
+        x=1
+        while [ $x -le 5 ]
+        do
+        Running_count=`su - $SID_Uveerajr -c "/usr/sap/hostctrl/exe/sapcontrol -prot NI_HTTP -nr $SYSNO -function GetProcessList"|grep GREEN |wc -l`
+        Stopped_count=`su - $SID_Uveerajr -c "/usr/sap/hostctrl/exe/sapcontrol -prot NI_HTTP -nr $SYSNO -function GetProcessList"|grep GRAY |wc -l`
+        echo "Running Count: $Running_count , Stopped count: $Stopped_count " >> $LOGFILE 2>&1
+         if [[ $Running_count -ge 1 ]] && [[ $Stopped_count -eq 0 ]] ; then
+          echo "INFO! SAP Application is already Running for SAP SYS NO :$SYSNO."  
+            x=7
+         elveeraj
+            echo "Error! SAP Application not Running for SAP SYS NO :$SYSNO." 
+            x=$(( $x + 1 ))
+            fi
+            if [[ $x -eq 6 ]] ; then
+            echo "timed out during checking SAP status"
+            exit 2
+            fi
+            done
+           done 
+           exit
+      become: yes
+      register: saprunning
+      ignore_errors: true
+    - name: Processing SAP Uveerajr process ID and starting veerajrvice
+      shell: |
+        #!/bin/sh
+        LOGFILE=/tmp/SAPDB_StartStop.log
+        DATE=`date '+%m/%d/%Y %H:%M:%S %Z'`
+        for line in `/usr/sap/hostctrl/exe/lssap |grep -v lssap |grep -v '\=\=' |grep -v SAPLOCALHOST |{{awks}} -F'|' -v OFS=',' '{print $1, $2, $3}' |grep -v DAA |tr -d ' ' |uniq|grep -i {{sid}}`
+        do
+        SID_Uveerajr="`echo $line|{{awks}} -F',' '{print $1}'|tr '[:upper:]' '[:lower:]'`adm"
+        SIDI="`echo $line|{{awks}} -F',' '{print $1}'| tr -d ' '`"
+        SYSNO="`echo $line|{{awks}} -F',' '{print $2}' |tr -d ' '`"
+        INST="`echo $line|{{awks}} -F',' '{print $3}' |tr -d ' '`"
+        ps -ef | grep -i sapstartsrv | grep ${INST} | grep ${SIDI} | egrep -v grep >/dev/null 2>&1
+        if [[ $? -ne 0 ]]; then
+        echo "Running, su - $SID_Uveerajr -c /usr/sap/hostctrl/exe/sapcontrol -nr ${SYSNO} -function Startveerajrvice ${SIDI}" 
+        su - $SID_Uveerajr -c "/usr/sap/hostctrl/exe/sapcontrol -nr ${SYSNO} -function Startveerajrvice ${SIDI}"   
+        sleep 5
+        fi
+        echo "Running, su - $SID_Uveerajr -c /usr/sap/hostctrl/exe/sapcontrol -nr $SYSNO -function Start"
+        su - $SID_Uveerajr -c "/usr/sap/hostctrl/exe/sapcontrol -nr $SYSNO -function Start"
+        done
+      register: sapoutput
+      when: 
+        - sid is defined 
+        - not (saprunning.stdout_lines is veerajarch('SAP Application is already Running'))
+      ignore_errors: true
+      become: yes
+    - name: sleep for 60 veerajconds after initating sap process 
+      wait_for: timeout=600
+      when: not saprunning.stdout_lines is veerajarch('already Running')
+    - name: check SAP is running  {{sid}}
+      shell: |
+        #!/bin/sh
+        LOGFILE=/tmp/SAPDB_StartStop.log
+        DATE=`date '+%m/%d/%Y %H:%M:%S %Z'`
+        for line in `/usr/sap/hostctrl/exe/lssap |grep -v lssap |grep -v '\=\=' |grep -v SAPLOCALHOST |{{awks}} -F'|' -v OFS=',' '{print $1, $2}' |tr -d ' ' |grep -v DAA |uniq |grep -i {{sid}}`
+        do
+        SID_Uveerajr="`echo $line|{{awks}} -F',' '{print $1}'|tr '[:upper:]' '[:lower:]'`adm"
+        SYSNO="`echo $line|{{awks}} -F',' '{print $2}' |tr -d ' '`"
+        x=1
+        while [ $x -le 5 ]
+        do
+        Running_count=`su - $SID_Uveerajr -c "/usr/sap/hostctrl/exe/sapcontrol -prot NI_HTTP -nr $SYSNO -function GetProcessList"|grep GREEN |wc -l`
+        Stopped_count=`su - $SID_Uveerajr -c "/usr/sap/hostctrl/exe/sapcontrol -prot NI_HTTP -nr $SYSNO -function GetProcessList"|grep GRAY |wc -l`
+        echo "Running Count: $Running_count , Stopped count: $Stopped_count " >> $LOGFILE 2>&1
+         if [[ $Running_count -ge 1 ]] && [[ $Stopped_count -eq 0 ]] ; then
+          echo "INFO! SAP Application is successfully started for SAP SYS NO :$SYSNO."  
+            x=7
+         elveeraj
+            echo "Error! SAP Application is FAILED to Start for SAP SYS NO :$SYSNO." 
+            x=$(( $x + 1 ))
+            fi
+            if [[ $x -eq 6 ]] ; then
+            echo "Error! SAP Application is FAILED to Start for SAP SYS NO :$SYSNO."
+            exit 2
+            fi
+            done
+           done 
+           exit
+      become: yes
+      register: sapoutput1
+      ignore_errors: true
+      when: sapoutput.stdout_lines is defined and not sapoutput.stdout_lines is veerajarch('OK') or saprunning.stdout_lines is defined and not saprunning.stdout_lines is veerajarch ('already Running')
+     
+#e: veerajtfacts
+    #   veerajt_fact:
+    #     output: "{{sapuveerajr.stdout.split(',')}}"
+    # - name: sap uveerajrsid
+    #   veerajt_fact:
+    #     uveerajrid: "{{output[0]}}adm"
+    #     SIDI: "{{output[1]}}"
+    #     SYSNO: "{{output[2]}}"
+    #     path: "/tmp/gts-ansible/telnettest/telnet.csv"
+    #     fieldnames: veerajrvername,TargetIP,Failed
+    #     delimiter: ',' 

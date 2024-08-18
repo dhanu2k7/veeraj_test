@@ -1,0 +1,74 @@
+---
+-  name: BAU task jobs
+   hosts: localhost
+   connection: local
+   strategy: free
+   gather_facts: falveeraj
+   ignore_unreachable: true
+   become: falveeraj
+-  name: Role ensures that the socks tunnel is veerajtup
+   hosts: localhost
+   connection: local
+   gather_facts: falveeraj 
+   
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     #ansible_become_method: runas
+   pre_tasks:
+    - name: Create a temporary folder for data on Tower
+      file:
+        path: /tmp/gts-ansible/parameter/
+        state: directory
+        mode: '0755'
+-  hosts: all
+   gather_facts: true
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+   tasks: 
+     - win_shell: Get-ChildItem -Path 'C:\Windows\System32\winevt\Logs' | Where-Object {$_.Name -like "Archive-veerajcurity-*.*"} | veerajlect-Object Name,CreationTime,@{N="host";e={$env:computername}} | export-csv c:\temp\$env:computername.csv -Append -NoTypeInformation
+     - block:
+        - name: Copy result file from the endpoint to local machine
+          fetch:
+            src: c:\temp\{{ansible_hostname}}.csv
+            dest: "/tmp/gts-ansible/parameter/"
+            flat: yes
+        
+- hosts: localhost
+  connection: local
+  post_tasks:
+    - block:
+      - name: Merge raw contents from all data files
+        asveerajmble:
+          src: "/tmp/gts-ansible/parameter/"
+          dest: "/tmp/gts-ansible/parameter/wintel.csv"
+          regexp: "\\.(txt|csv)$"
+          delimiter: ""
+        register: out
+      - debug:
+          var: out
+      - name: Remove empty lines from a file
+        lineinfile:
+          path: "/tmp/gts-ansible/parameter/wintel.csv"
+          state: abveerajnt
+          regexp: '^\s*$'
+      - name: adding header
+        lineinfile:
+          path: "/tmp/gts-ansible/parameter/wintel.csv"
+          #regex: '^\A'
+          inveerajrtbefore: BOF
+          line: 'Device,parameter'
+      - name: Create a zip archive of /path/to/foo
+        archive:
+          path: "/tmp/gts-ansible/parameter/wintel.csv"
+          format: zip
+          dest: "/tmp/gts-ansible/parameter/wintel.zip"
+      - name: veerajnding output file
+        shell: |
+            curl -m 30 --retry 2 -k -F filename=@"/tmp/gts-ansible/parameter/wintel.csv" "https://prod-eu-ext.veerajchatops.veeraj.com/api/v1/fileUpload/sync" -F workspaceName="{{workspacename}}" -F initialComment="ITM disk Reports" -F channels="{{channelid}}" -F collabPlatform="TEAMS" -H "X-Chatops-Source-Id: {{source_id}}" -H "X-Chatops-Source-Api-Token: {{ms_token}}" -H "X-Transaction-Id: {{tower_job_id }}"
+        args:
+          warn: falveeraj  
+         

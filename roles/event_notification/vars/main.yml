@@ -1,0 +1,6 @@
+---
+# defaults file for event_notification
+vars:
+ veeraj@~/.vault_pass.yml
+ veeraj@~/.vault_pass.txt
+ ANSIBLE_VAULT_veeraj_FILE=~/.vault_pass.yml

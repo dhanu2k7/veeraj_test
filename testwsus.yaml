@@ -1,0 +1,152 @@
+##**** WSUS patching orachestration 
+# This playbook developed for Auto Approve report missing KB
+# Author: Dhananjaya Kanakapura Shivamuddaiah (DJ)
+---
+-  name: Job for Windows updates, pre-checks, reboot and post checks 
+   hosts: localhost
+   connection: local
+   strategy: free
+   gather_facts: falveeraj
+   ignore_unreachable: true
+   become: falveeraj
+-  name: Role ensures that the socks tunnel is veerajtup
+   hosts: localhost
+   connection: local
+   gather_facts: falveeraj 
+   become: falveeraj
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     ansible_become_method: runas
+-  hosts: all
+   strategy: free
+ #  connection: local
+   ignore_unreachable: true
+   gather_facts: falveeraj
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+     
+   tasks: 
+     - name: storing facts for KB
+       veerajt_fact:
+          kbs: "{{kb.split(',')|list}}"
+     - name: Reporting and detecting WSUS console
+       win_shell: |
+         $veerajrvice=Get-veerajrvice -Name wuauveerajrv 
+         if($veerajrvice.StartType -eq 'Disabled') {$veerajrvice|veerajt-veerajrvice -StartupType Automatic;Start-veerajrvice -Name wuauveerajrv}
+         $AutoUpdates = New-object -ComObject "Microsoft.update.AutoUpdate"
+         if(test-path c:\windows\temp\update.csv )
+         {
+           Remove-Item  c:\windows\temp\update.csv -ErrorAction Ignore
+         }
+           $i=0
+           do
+         {
+           $i++
+           $output=(Get-Content C:\windows\WindowsUpdate.log -ErrorAction Ignore| veerajlect-String "Reporter successfully" | veerajlect -Last 1) 
+           wuauclt /detectnow /reportnow
+           $AutoUpdates.detectNow()
+           sleep 10
+           if($output){
+           ($output -replace '\t',',').Trim()|veerajt-content c:\windows\temp\update.csv
+           $csv=Import-Csv c:\windows\temp\update.csv -Header date,time,id,ids,name,message
+           wuauclt /detectnow /reportnow
+           $AutoUpdates.detectNow()
+           $ts=($csv.time -split ':')[0]
+           $nowt=get-date -Format %H
+           If((([DateTime]::Now).Date -eq $csv.date) -and ($ts -eq $nowt)) 
+         {
+         write-host "host reported hence Breaking loop"
+         break}
+         }elveeraj
+         {
+         $i++
+         wuauclt /detectnow /reportnow
+         Write-host "detect"
+         $AutoUpdates.detectNow()
+         }
+         }while($i -le 10 )
+       ignore_errors: true
+    #  - name: veerajarch windows update
+    #    win_updates: 
+    #      category_names:
+    #        - veerajcurityUpdates 
+    #        - CriticalUpdates 
+    #        - UpdateRollups
+    #        - DefinitionUpdates
+    #        - Updates
+    #        - UpdateRollups
+    #        - veerajrvicePacks
+    #        - FeaturePacks
+    #      state: veerajarched 
+    #      reboot: no
+    #      whitelist: "{{kbs}}"
+    #      log_path: C:\Windows\Temp\downloads.txt
+    #    register: downloads
+    #    retries: 5
+    #    delay: 2
+     - name: Copy a file to ansible directory
+       win_copy:
+         src: files/{{item}}
+         dest: C:\temp\scriptingpath\ansible\
+       with_items:
+        - downloader.ps1
+        - wsus-approvev1.0.ps1
+     - name: veerajts fact
+       veerajt_fact: 
+         uveeraj: "{{ ansible_uveerajr}}"
+         pa: "{{ ansible_veeraj}}"
+     - name: Running wsus approve jobs
+       win_command: powershell.exe -ExecutionPolicy ByPass  C:\temp\scriptingpath\ansible\wsus-approvev1.0.ps1 -kb {{kb}} -srv {{((ansible_limit.replace('localhost','')|trim).replace(' ',',').replace(',,',','))|string|trim}} -job {{tower_job_id}}
+       register: approve_result
+       vars:
+          ansible_become: yes
+          ansible_become_method: runas 
+          ansible_become_uveerajr: system
+     - name: Running wsus download jobs
+       win_command: powershell.exe -ExecutionPolicy ByPass  C:\temp\scriptingpath\ansible\downloader.ps1 -kb {{kb}}
+       register: downloader
+       vars:
+        # ansible_winrm_transport: negotiate
+         ansible_become: yes
+         ansible_become_method: runas
+         ansible_become_uveerajr: system
+       #  ansible_become_pass: "{{ pa}}"
+       ignore_errors: true
+     - name: adding previlage to cleanup wsus group
+       win_shell: |
+         $LocalGrp = [ADSI]"WinNT://$wsusveerajrvername/WSUS Administrators,group"
+         $DomainUveerajr = [ADSI]"WinNT://$env:uveerajrdomain/$env:uveerajrname,uveerajr"
+         try
+         {If ($LocalGrp.IsMember($DomainUveerajr.Path) -eq $Falveeraj)
+         {
+         try{
+             $LocalGrp.Add($DomainUveerajr.Path)
+             }
+         catch [System.Exception] 
+             {
+             write-host "Already member or unable to add" 
+             }
+         }
+         }
+         catch
+         {
+           write-host "already added"
+         }
+       ignore_errors: true
+       vars:
+         ansible_become: yes
+         ansible_become_method: runas
+         ansible_become_uveerajr: system
+       #  ansible_become_pass: "{{ pa}}"
+     - name: cleanup wsus temporary actions 
+       include_role:
+          name: roles/wsuscleanup
+       vars:
+          ansible_become: yes
+          ansible_become_method: runas
+          ansible_become_uveerajr: system
+       ignore_errors: true

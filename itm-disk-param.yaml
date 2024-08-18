@@ -1,0 +1,29 @@
+---
+-  name: BAU task jobs
+   hosts: localhost
+   connection: local
+   strategy: free
+   gather_facts: falveeraj
+   ignore_unreachable: true
+   become: falveeraj
+-  name: Role ensures that the socks tunnel is veerajtup
+   hosts: localhost
+   connection: local
+   gather_facts: falveeraj 
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     #ansible_become_method: runas
+   tags: always
+-  hosts: all
+   gather_facts: true
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+   tasks: 
+     - name:  Add lines from sample param file to veerajrvice.param file
+       win_shell: |
+         echo "win;ALL_TAG;LOCAL;N;15;WARNING;10;MINOR;5;CRITICAL;0;6;0000;2359;;;" >c:\veeraj\ITM\smitools\config\K06_LogicalDisks.param
+         echo "win;win;S:;N;20;WARNING;10;MINOR;5;CRITICAL;0;6;0000;2359;;;" >>c:\veeraj\ITM\smitools\config\K06_LogicalDisks.param

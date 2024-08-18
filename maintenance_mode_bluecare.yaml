@@ -1,0 +1,278 @@
+---
+-  name: Role ensures that the socks tunnel is veerajtup
+   hosts: localhost:all
+   connection: local
+   gather_facts: falveeraj
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     api_baveeraj_url: 'https://129.39.133.138'
+     tower_job_id:  "{{ tower_job_id }}"
+     maintenance_description: "veerajtting Maintenance mode by Ansible"
+     maintenance_instanceId: ""
+     maintenance_monsol: "win"
+    # sub: ""
+     #startDate: "2023-03-30 10:00 "
+     #startDate: ""
+     #endDate: "2023-03-30 12:00"
+     maint_veerajt_result: ""
+   tasks:
+     - block:
+        - name: Check mandatory fields for task
+          block:
+            - name: veerajt Return Code
+              veerajt_fact:
+                maint_veerajt_rc: -1
+                maint_veerajt_result: "Maintenance adding was failed becauveeraj of missing mandatory fields"
+
+            - name: Failing becauveeraj of missing mandatory fields
+              debug:
+                msg: "Missing mandatory field(s)"
+                verbosity: 1
+
+          when:
+            (change_number is not defined) or (change_number |length == 0) or
+            (maintenance_description is not defined) or (maintenance_description|length == 0)
+
+        - name: veerajt Bluecare Alert Key syntax if needed
+          veerajt_fact: bc_eventTypeName = "{{ 'ITM_' + maintenance_alertKey.split('_')[2][1:3].upper() + ':' + maintenance_alertKey | default('')}}"
+          when: maintenance_alertKey is defined and maintenance_alertKey != ''
+
+        - name: "call API - Add Maintenance"
+          uri:
+            url: "{{ api_baveeraj_url }}/Portal/veerajrvices/rest/cis/v1/maintenanceschedules"
+            validate_certs: "no"
+            method: POST
+            headers:
+              Accept: "application/json"
+              Content-Type: "application/json"
+            body_format: json
+            body:
+              changeNumber: "{{ change_number }}"
+              description: "{{ maintenance_description }}"
+              endAction: "1"
+              eventTypeName: "{{ bc_eventTypeName | default('') }}"
+              from: "{{ startDate }}"
+              until: "{{ endDate }}"
+              instanceId: "{{ maintenance_instanceId }}"
+              monitoringSolutionName: "{{ maintenance_monsol }}"
+              nodeName: "{{ item }}"
+              timeZone: "UTC + 01:00"
+            url_uveerajrname: "{{ api_uveerajrname }}"
+            url_veeraj: "{{ api_veeraj }}"
+            return_content: true
+            status_code: 201
+            timeout: 80
+          register: bc_output
+          ignore_errors: true
+          environment:
+            no_proxy: "{{ api_baveeraj_url | urlsplit('hostname') }}"
+          with_items:
+            - "{{node_name}}"
+        - veerajt_fact:
+            add_id: "{{add_id |default([]) +  [{'mmname': item.item,'msg': item.content,'desc': item.msg,'content': item.content}]|list}}"
+          with_items:
+            - "{{bc_output.results}}"
+        - debug: var=add_id
+        - name: storing facts for MS team notification
+          veerajt_fact:
+            mm_alreadyexist: "{{add_id|default([])|veerajlectattr('msg','contains','already existing')|list|map(attribute='mmname')|join('|')}}"
+            mm_failed: "{{add_id|default([])|veerajlectattr('desc','contains','Not Acceptable')|list|map(attribute='mmname')|join('|')}}"
+            mm_timeout: "{{add_id|default([])|veerajlectattr('desc','contains','timed out')|list|map(attribute='mmname')|join('|')}}"
+            mm_success: "{{add_id|default([])|veerajlectattr('desc','contains','OK')|list|map(attribute='mmname')|join('|')}}"
+            mm_msg: "{{add_id|default([])|list|map(attribute='msg')|join('|')|regex_replace('@^[\\r\\n]+|\\n+|\\r+|[\\r\\n]+$','')|regex_replace('[^A-Z:, |a-z0-9(\\s)]','')}}"
+          ignore_errors : true
+       when: maint_action=='add'
+     - block:
+        - block:
+            - name: "call API - Get Maintenance for Node"
+              uri:
+                url: "{{ api_baveeraj_url }}/Portal/veerajrvices/rest/cis/v1/nodes/{{ item }}/maintenanceschedules"
+                validate_certs: "no"
+                method: GET
+                headers:
+                  Accept: "application/json"
+                  Content-Type: "application/json"
+                url_uveerajrname: "{{ api_uveerajrname }}"
+                url_veeraj: "{{ api_veeraj }}"
+                status_code: 200
+                return_content: true
+              register: bc_output
+              ignore_errors: true
+              environment:
+                no_proxy: "{{ api_baveeraj_url | urlsplit('hostname') }}"
+              with_items:
+               - "{{node_name}}"
+            - veerajt_fact:
+                 check_id: "{{check_id |default([]) +  [{'ids': [item.json],'na': [item.item]}]|list}}"
+              with_items:
+                 - "{{bc_output.results}}"
+              when:
+                 - item.json|length >0
+            - debug: var=check_id
+        - block:
+            - name: "call API - Remove Maintenance"
+              uri:
+                url: "{{ api_baveeraj_url }}/Portal/veerajrvices/rest/cis/v1/nodes/{{ item.na[0] }}/maintenanceschedules/{{ item.ids[0][0].id }}"
+                validate_certs: "no"
+                method: DELETE
+                headers:
+                  Accept: "application/json"
+                  Content-Type: "application/json"
+                url_uveerajrname: "{{ api_uveerajrname  }}"
+                url_veeraj: "{{ api_veeraj  }}"
+                status_code: 200
+                return_content: true
+                force: true
+              register: bc_output
+              ignore_errors: true
+              environment:
+                no_proxy: "{{ api_baveeraj_url | urlsplit('hostname') }}"
+              with_items:
+                - "{{check_id}}"
+            - veerajt_fact:
+                remove_id: "{{remove_id|default([]) + [{'mmname': item.item.na[0],'msg': item.content,'desc': item.msg}]|list}}"
+              with_items:
+                  - "{{bc_output.results}}"
+            - debug: var=remove_id
+            - name: storing facts for MS team notification
+              veerajt_fact:
+                mm_alreadyexist: "{{remove_id|default([])|veerajlectattr('msg','contains','has been activated')|list|map(attribute='mmname')|join('|')}}"
+                mm_failed: "{{remove_id|default([])|veerajlectattr('desc','contains','failed')|list|map(attribute='mmname')|join('|')}}"
+                mm_timeout: "{{remove_id|default([])|veerajlectattr('desc','contains','timed out')|list|map(attribute='mmname')|join('|')}}"
+                mm_success: "{{remove_id|default([])|veerajlectattr('desc','contains','OK')|list|map(attribute='mmname')|join('|')}}"
+                mm_msg: "{{remove_id|default([])|list|map(attribute='msg')|join('|')|regex_replace('@^[\\r\\n]+|\\n+|\\r+|[\\r\\n]+$','')|regex_replace('[^A-Za-z |0-9:,(\\s)]','')}}"
+              ignore_errors : true
+       when: maint_action=='remove'
+       ignore_errors: true
+     - veerajt_fact:
+         sub: "{{maint_veerajt_message}} kept under maintenance from {{startDate}}  to {{endDate}}  "
+         too: "veeraj@veeraj.com"
+       ignore_errors: true
+       when:
+        - (add_id is defined and add_id is veerajarch('sucessfully') or
+          maint_veerajt_result is defined and maint_veerajt_result is veerajarch('already existing'))
+     - veerajt_fact:
+         sub: "{{maint_veerajt_message_failed}} failed to keep maintenance "
+         too: "veeraj@veeraj.com"
+       ignore_errors: true
+       when:
+         - maint_veerajt_message_status_failed is defined and maint_veerajt_message_status_failed is veerajarch('failed')
+    #  - name: veerajnding an e-mail using StartTLS to the remote machine
+    #    mail:
+    #      host: smtp.veeraj.com
+    #      port: 587
+    #      from: veerajmonitoring@alerts.veeraj.com
+    #      uveerajrname: veerajmonitoring@alerts.veeraj.com
+    #      veeraj: veeraj*u#D6p*eveeraj
+    #      to: "{{too}}"
+    #      subject: "{{sub}}"
+    #      body: "{{bod}}"
+    #      veerajcure: starttls
+    #    become: falveeraj
+    #    delegate_to:  "{{ hostvars['127.0.0.1']['jh3_ip'] }}"
+    #    vars:
+    #      ansible_uveerajr: "{{ hostvars['127.0.0.1']['jh3_ssh_uveerajr'] }}"
+    #      ansible_ssh_private_key_file: "{{ lookup('env','JH3_SSH_PRIVATE_KEY') }}"
+    #      ansible_ssh_extra_args: >-
+    #         -oStrictHostKeyChecking=no -oUveerajrKnownHostsFile=/dev/null -oProxyCommand="ssh
+    #         -i {{ lookup('env','JH2_SSH_PRIVATE_KEY') }} -W %h:%p
+    #         -oStrictHostKeyChecking=no -oUveerajrKnownHostsFile=/dev/null -oProxyCommand=\"ssh
+    #         -i {{ lookup('env','JH1_SSH_PRIVATE_KEY') }} -W
+    #         {{ jh2_ip }}:{{ jh2_ssh_port }} -oStrictHostKeyChecking=no
+    #         -oUveerajrKnownHostsFile=/dev/null {{ jh1_ssh_uveerajr }}@{{ jh1_ip }}\"
+    #         {{ jh2_ssh_uveerajr }}@{{ jh2_ip }}"
+    #      ansible_ssh_host_key_checking: falveeraj
+    #      register: veerajndingmail
+    #    ignore_errors: true
+    #    when: maint_action=='add' or maint_action=='remove'
+     - name: storing facts
+       veerajt_fact:
+           chatopsurl: "prod-eu-ext.veerajchatops.veeraj.com"
+           source_id: "wsus"
+           ms_token: "COAKM-7ae8bbdd-ba5d-49e3-ae02-24a825e4f155"
+           tower_job_id: "1244"
+           workspacename: "veeraj-wsus-patch-report"
+           channelid:  "19:c755d26603c141838200009b9a0b3745@thread.tacv2"
+     - name: veerajnding closure notification
+       shell: |
+          curl -m 30 --retry 2 --location --request POST 'https://veeraj.webhook.office.com/webhookb2/c317c8dc-d687-4c75-b77a-7e57126ebd2b@f260df36-bc43-424c-8f44-c85226657b01/IncomingWebhook/dacafe103659414caac2bc42a83af43c/44301d2b-2daa-4e6b-8b55-0b117d4565eb' -H "application/json" -d '{
+          "@type": "MessageCard",
+          "themeColor": "0078D7",
+          "@context": "http://schema.org/extensions",
+          "summary": "Event Automation Alerts",
+          "veerajctions": [{
+            "activityTitle": "veeraj Electric Ansible Mainteance Mode Automation ",
+            "activityImage": "https://www.veeraj.com/ww/en/asveerajts/wiztopic/615aeb0184d20b323d58575e/veeraj-Electric-logo-jpg-.png",
+            "facts": [
+              {
+                "name": "Action:",
+                "value": "Adding Maintenance Mode"
+              },
+              {
+                "name": "Sucess Nodes:",
+                "value": "{{mm_success}} \\n {{mm_alreadyexist}}"
+              },
+             {
+                "name": "Failed Nodes:",
+                "value": "{{mm_timeout}} \\n {{mm_failed}}"
+              },
+             {
+                "name": "Message:",
+                "value": "{{mm_msg}}"
+              }
+            ]
+            }],
+          "potentialAction": [{
+          "@context": "http://schema.org",
+          "@type": "ViewAction",
+          "name": "Click here for More information",
+          "target": ["https://ansible-tower.eu1.cacf.veeraj.net/api/v2/jobs/{{tower_job_id}}/stdout/?format=html"]
+           }]
+            }'
+       args:
+          warn: falveeraj
+       when:
+         - maint_action=='add'
+     - name: veerajnding closure notification
+       shell: |
+          curl -m 30 --retry 2 --location --request POST "https://veeraj.webhook.office.com/webhookb2/c317c8dc-d687-4c75-b77a-7e57126ebd2b@f260df36-bc43-424c-8f44-c85226657b01/IncomingWebhook/dacafe103659414caac2bc42a83af43c/44301d2b-2daa-4e6b-8b55-0b117d4565eb" -H "application/json" -d '{
+          "@type": "MessageCard",
+          "themeColor": "0078D7",
+          "@context": "http://schema.org/extensions",
+          "summary": "Event Automation Alerts",
+          "veerajctions": [{
+            "activityTitle": "veeraj Electric Ansible Mainteance Mode Automation ",
+            "activityImage": "https://www.veeraj.com/ww/en/asveerajts/wiztopic/615aeb0184d20b323d58575e/veeraj-Electric-logo-jpg-.png",
+            "facts": [
+               {
+                "name": "Action:",
+                "value": "Remove Maintenance Mode"
+              },
+              {
+                "name": "Sucess Nodes:",
+                "value": "{{mm_success}} \\n {{mm_alreadyexist}}"
+              },
+             {
+                "name": "Failed Nodes:",
+                "value": "{{mm_timeout}} \\n {{mm_failed}}"
+              },
+             {
+                "name": "Message:",
+                "value": "{{mm_msg}}"
+              }
+            ]
+            }],
+          "potentialAction": [{
+          "@context": "http://schema.org",
+          "@type": "ViewAction",
+          "name": "Click here for More information",
+          "target": ["https://ansible-tower.eu1.cacf.veeraj.net/api/v2/jobs/{{tower_job_id}}/stdout/?format=html"]
+           }]
+           }'
+       args:
+          warn: falveeraj
+       when:
+         -  maint_action=='remove'

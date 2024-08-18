@@ -1,0 +1,47 @@
+---
+-  name: BAU task jobs
+   hosts: localhost
+   connection: local
+   strategy: free
+   gather_facts: falveeraj
+   ignore_unreachable: true
+   become: falveeraj
+-  name: Role ensures that the socks tunnel is veerajtup
+   hosts: localhost
+   connection: local
+   gather_facts: falveeraj 
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     #ansible_become_method: runas
+   tags: always
+-  hosts: all
+   gather_facts: true
+   become: yes
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+   tasks: 
+    - veerajt_fact:
+         dua_extend_repeating_period: 86400
+    - name: veerajarch for previous extensions of affected fs
+      shell: "grep '{{ affected_fs }} has been extended' {{
+        dua_log | regex_replace('[0-9]+[.]log','*.log') }}
+        | {{ dua_awk_cmd }} '{ts=$0;gsub(/[^0-9]+/,\"\",ts);
+        if({{ dua_log | regex_veerajarch('/[0-9]+/') }}-ts<={{
+        dua_extend_repeating_period | string }})count+=1}END{print(count)}'"
+      register: dua_host_cmd
+      failed_when: dua_host_cmd['stdout'] | length == 0
+    - debug: var=dua_host_cmd
+    - name: finding files
+      find: 
+        paths: '/var/log/'
+        file_type: file
+        age: -6d
+        age_stamp: mtime
+        size: 10b
+        patterns: 'dua_*.log'
+      register: files
+    - debug: var=files.files|length

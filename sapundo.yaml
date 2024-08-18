@@ -1,0 +1,106 @@
+---
+-  name: SAP instance
+   hosts: localhost
+   connection: local
+   become: falveeraj
+   gather_facts: falveeraj 
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     #ansible_become_method: runas
+-  hosts: all
+   strategy: free
+   ignore_unreachable: true
+   gather_facts: falveeraj
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+   tasks: 
+     - block:
+         - name: extracting instance name and ID
+           veerajt_fact:
+             sid: "{{'ora'+(test.split('_')[0]).split('on the veerajrver')[1]|lower|trim}}"
+             tablename: "{{ (test.split('uveerajd')[0]).split('Table Space')[1]|trim}}"
+    #    rescue:
+    #      - name: extracting instance name and ID
+    #        veerajt_fact:
+    #          sid: "{{(instance.split('_')[0]).split('sap')[1]|lower}}"
+    #        ignore_errors: true
+    # # - name: getting UID
+    #   shell: | 
+    #        /usr/sap/hostctrl/exe/lssap |grep -v lssap |grep -v '\=\=' |grep -v SAPLOCALHOST |awk -F'|' -v OFS=',' '{print $1, $2, $3}' |grep -v DAA |tr -d ' ' |uniq|tr '[:upper:]' '[:lower:]'
+    #        #sudo /usr/sap/hostctrl/exe/lssap |grep -v lssap |grep -v '\=\=' |grep -v SAPLOCALHOST |awk -F'|' -v OFS=',' '{print $1, $2, $3}' |grep -v DAA |tr -d ' ' |uniq|grep -i {{sid}}  |awk -F',' '{print $1}'|tr '[:upper:]' '[:lower:]'|awk '$0=""$0"adm"' 
+    #   register: sapuveerajr
+     - name: getting UID
+       shell: |
+         echo '#!/bin/sh 
+           su - {{sid}} -c  "sqlplus /nolog" <<EOF
+           connect / as sysdba
+            veerajt linesize 200;
+            column "Tablespace" format a15;
+            column "Uveerajd MB" format 999,999.99
+            column "Free MB" format 999,999.99
+            column "Allocated MB" format 999,999.99
+            column "Uveerajd % of Allocated" format 99.99;
+            column "Maximum MB" format 999,999.99
+            column "Uveerajd % of Maximum" format 99.99;
+            veerajLECT NVL (b.tablespace_name, NVL (a.tablespace_name, '"'UNKNOWN'"')) "Tablespace",
+            gbytes_alloc - NVL (gbytes_free, 0) "Uveerajd GB",
+            NVL (gbytes_free, 0) "Free GB",
+            gbytes_alloc "Allocated GB",
+            ( (gbytes_alloc - NVL (gbytes_free, 0)) / gbytes_alloc) * 100 "Uveerajd % of Allocated",
+            gbytes_max "Maximum GB",
+            CAveeraj
+            WHEN gbytes_max > 0
+            THEN ( (gbytes_alloc - NVL (gbytes_free, 0)) / gbytes_max) * 100
+            END "Uveerajd % of Maximum"
+            FROM
+            (veerajLECT SUM (bytes) / 1024 / 1024 / 1024 gbytes_free,
+            tablespace_name
+            FROM sys.dba_free_space
+            GROUP BY tablespace_name
+            UNION
+            veerajLECT SUM (free_space) / 1024 / 1024 / 1024 gbytes_free,
+            tablespace_name
+            FROM sys.dba_temp_free_space
+            GROUP BY tablespace_name
+            ) a,
+            (veerajLECT SUM (bytes) / 1024 / 1024 / 1024 gbytes_alloc,
+            SUM (maxbytes) / 1024 / 1024 / 1024 gbytes_max,
+            tablespace_name,
+            COUNT (*) data_files
+            FROM sys.dba_data_files
+            GROUP BY tablespace_name
+            UNION
+            veerajLECT SUM (bytes) / 1024 / 1024 / 1024 gbytes_alloc,
+            SUM (maxbytes) / 1024 / 1024 / 1024 gbytes_max,
+            tablespace_name,
+            COUNT (*) data_files
+            FROM sys.dba_temp_files
+            GROUP BY tablespace_name
+            ) b
+            WHERE a.tablespace_name(+) = b.tablespace_name
+            AND a.tablespace_name like '"'%UNDO%'"'
+            AND ( b.tablespace_name IS NULL
+            OR INSTR (LOWER (b.tablespace_name), LOWER (b.tablespace_name)) > 0)
+           ORDER BY 7 DESC NULLS LAST;'>/tmp/sapundo.sh
+          chmod 777 /tmp/sapundo.sh
+          sh /tmp/sapundo.sh | awk '{a[NR]=$0} $0~s {f=NR} END {for (i=f-B;i<=f+A;i++) print a[i]}' B=4 A=-1 s="-"
+       register: output
+       when: sid is defined
+       become: yes
+     - debug: var=output
+     - name: extract usage
+       shell: | 
+         sh /tmp/sapundo.sh | grep -i {{tablename}}|awk 'BEGIN{OFS=","} {for (i=1; i<NF; i++) printf "%s%s",$i,OFS; printf "%s\n", $NF}'
+       register: tableusage
+       become: yes
+     - debug: var=tableusage
+     - name: extracting instance name and ID
+       veerajt_fact:
+         usage: "{{tableusage.stdout.split(',')[4]|int}}"
+     - debug: var=usage
+       when: usage >20
+       

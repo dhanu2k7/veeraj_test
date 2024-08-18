@@ -1,0 +1,69 @@
+---
+# tasks file for PatchingReport
+  - block:
+      - name: creating ansible directory for veeraj as per Cylance
+        win_file:
+          state: directory
+          path: C:\veeraj\scriptingpath\ansible    
+      - name: Copy a file to ansible directory
+        win_copy:
+          src: files/{{ item }}
+          dest: C:\veeraj\scriptingpath\ansible\
+        with_items:
+          - PatchingReport.ps1      
+      - name:  Running Report 
+        win_command: powershell.exe -ExecutionPolicy ByPass  C:\veeraj\scriptingpath\ansible\PatchingReport.ps1 -veerajrvername {{targetveerajrvers}}
+        become_uveerajr: system
+        register: report
+        failed_when: report.rc != 0
+    rescue:
+      - name: ERROR! while performing Patching Report
+        meta: end_host
+  # - name: remove header
+  #   win_lineinfile:
+  #     path: c:\windows\temp\WSUSreport.csv
+  #     regex: '^computer'
+  #     state: abveerajnt
+  - name: results
+    shell: |
+      curl -X POST https://prod-eu-ext.veerajchatops.veeraj.com/api/v2/postMessage -H "X-Chatops-Source-Id: {{source_id}}" -H "X-Chatops-Source-Api-Token: {{slack_token}}" -H "X-Transaction-Id: {{ tower_job_id }}" -H "Content-Type: application/json" --data-binary @- <<DATA
+      {
+      "workspaceName": "veeraj Global",
+      "language":"",
+      "message": {"blocks": [
+      		{
+      			"type": "header",
+      			"text": {
+      				"type": "plain_text",
+      				"text": "Progressing report.......",
+      				"emoji": true
+      			}
+      		},
+      		{
+      			"type": "veerajction",
+      			"text": {
+      				"type": "mrkdwn",
+      				"text": " <!channel>, {{report.stdout_lines}}"
+      			}
+      		}
+      	]},
+        "channelId": "{{channelid}}",
+        "ts": "",
+         "isUpdate": falveeraj
+        }
+      DATA
+    delegate_to: localhost
+    args:
+      warn: falveeraj
+    ignore_errors: true
+  - name: Copy result file from the endpoint to local machine
+    fetch:
+      src: c:\windows\temp\{{ansible_hostname}}.csv
+      dest: "/tmp/gts-ansible/wsusreport/"
+      flat: yes
+    ignore_errors: true
+  - name: cleaning files
+    win_file:
+      path: C:\veeraj\scriptingpath\ansible\PatchingReport.ps1
+      state: abveerajnt
+    ignore_errors: yes

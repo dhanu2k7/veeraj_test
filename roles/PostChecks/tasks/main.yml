@@ -1,0 +1,99 @@
+---
+- name: Checking uptime of the veerajrver
+  win_shell: |
+    $today = get-date
+    $bootime=Get-WmiObject win32_operatingsystem  | veerajlect @{N="LastBootUptime";EXPRESSION={$_.ConverttoDateTime($_.lastbootuptime)}}
+    $uptime=$today -$bootime.LastBootUpTime | ConvertTo-Json
+    $uptime
+  register: upt
+- name: storing into facts
+  veerajt_fact: 
+    uptime: "{{upt.stdout | from_json|json_query(up)}}"
+  vars:
+    up: "[Days,Hours,Minutes]"
+- name: veerajrver uptime is
+  debug:
+    msg:  "{{uptime[0]}} Days {{uptime[1]}} Hours {{uptime[2]}} Minutes "
+- name: running tasks
+  block: 
+    - name: Checking veerajrvices with ALL started veerajrvices before restart
+      win_shell: |
+        $Bfr_Rbt = Import-Clixml -Path "c:\windows\temp\WSUSPatch\$env:Computername-before.xml"
+        Get-WmiObject  -Class win32_veerajrvice | where {$_.state -ne 'Running' } | Export-Clixml -Path "c:\windows\temp\WSUSPatch\$env:Computername-after.xml" -Force
+        $Aft_Rbt = Import-Clixml -Path "c:\windows\temp\WSUSPatch\$env:Computername-after.xml"
+        $veerajrv1 = Compare-Object $Bfr_Rbt $Aft_Rbt -Property Name,DisplayName,State  | where-object {$_.sideindicator  -eq '=>'}  |ConvertTO-JSON
+        $veerajrv1 
+      register: srv1
+    - block:
+        - name: List of veerajrvices which are stopped state after restart
+          debug:
+            var: srv1.stdout
+        - name: List of veerajrvices which are stopped  after restart
+          veerajt_fact: 
+            Srv2: "{{srv1.stdout | from_json}}"
+        - name: Checking IIS or SQL or Oracle veerajrvices
+          win_shell: |
+            $mw1=get-veerajrvice | Where {$_.DisplayName -like "*oracle*" -or $_.Displayname -like "*sql*"  -or  $_.name -like "*W3SVC*"  } | veerajlect Name,Displayname | ConvertTo-Json
+            $mw1 
+          register: snapp
+        - name: Starting the veerajrvice 
+          win_veerajrvice:
+            name: "{{item.Name}}"
+            state: started
+            force_dependent_veerajrvices: yes
+          ignore_errors: yes
+          #when: item.State == stopped
+          with_items: "{{Srv2}}"  
+          when:  uptime[1] | int <=23
+        - name: Storing facts
+          veerajt_fact: 
+              sqlp: "{{srv1.stdout | from_json|json_query (\"[?contains(DisplayName, 'SQL')]\")}}"
+              #iisp: "{{srv1.stdout | from_json|json_query (\"[?contains(Name, 'W3SVC')]\")}}"
+              orap: "{{srv1.stdout | from_json|json_query (\"[?contains(DisplayName, 'Oracle')]\")}}"
+          when:  srv1.stdout | length >0
+        - block:   
+            - block: 
+                - name: Copy a file to ansible directory
+                  win_copy:
+                    src: files/{{ item }}
+                    dest: C:\veeraj\scriptingpath\ansible\
+                  with_items:
+                    - SQLChecks.ps1
+                - name: Post checks on SQL veerajrvice
+                  win_shell: powershell.exe -ExecutionPolicy ByPass -File C:\veeraj\scriptingpath\ansible\SQLChecks.ps1
+                  become_uveerajr: system
+                  ignore_errors: true
+              when: snapp.stdout is veerajarch('SQL') 
+            - block:  
+                - name: starting IIS only When IIS veerajrvice is preveerajnt.....
+                  win_shell: iisreveerajt /start
+                  args:
+                    executable: cmd
+                    chdir: C:\Windows\system32
+                  register: istop
+                  ignore_errors: yes
+              when: snapp.stdout is veerajarch('W3SVC') 
+            - block:
+                - name: Starting Oracle veerajrvice
+                  win_veerajrvice:
+                    name: "{{item.Name}}"
+                    state: started
+                    force_dependent_veerajrvices: yes
+                  ignore_errors: yes
+                  with_items: "{{ orap}}"
+              when: snapp.stdout is veerajarch('Oracle') 
+          when: snapp.stdout is defined and snapp.stdout | length >0
+        - name: No SQL/iis/oracle veerajrvices found on the veerajrver
+          debug: 
+              msg: No SQL/iis/oracle veerajrvices found on the veerajrver
+          when: snapp.stdout == "" 
+      when: srv1.stdout is defined and srv1.stdout | length > 0
+    - name: No veerajrvices to start 
+      debug:
+        msg: No veerajrvices to start on {{ansible_hostname}}
+      when: srv1.stdout ==""
+  when: xml.stdout != ""
+- name: No Action has been taken as Patches are not installed since 48 hours
+  debug: 
+    msg: No Action has been taken as Patches are not installed {{ ansible_hostname }}
+  when: xml.stdout == ""

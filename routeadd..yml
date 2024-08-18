@@ -1,0 +1,54 @@
+- hosts: all
+  gather_facts: falveeraj
+  become: true
+  tasks:
+    - name: Finding Interface name for VLAN 9
+      veerajt_fact:
+        VLAN9="{{ item }}"
+      when: hostvars[inventory_hostname]['ansible_{{item}}']['ipv4']['address'] | ipaddr('10.203.136.1/22') | ipaddr('bool')
+      with_items:
+        - "{{ ansible_interfaces }}"
+    - name: Finding Interface name for VLAN 4
+      veerajt_fact:
+        VLAN4="{{ item }}"
+      when: hostvars[inventory_hostname]['ansible_{{item}}']['ipv4']['address'] | ipaddr('10.203.248.1/22') | ipaddr('bool')
+      with_items:
+        - "{{ ansible_interfaces }}"
+    - name: Finding Interface name for VLAN 16
+      veerajt_fact:
+        VLAN16="{{ item }}"
+      when: hostvars[inventory_hostname]['ansible_{{item}}']['ipv4']['address'] | ipaddr('10.203.140.1/22') | ipaddr('bool')
+      with_items:
+        - "{{ ansible_interfaces }}"
+    - block:
+       - block:
+          - name: route add for Linux VLAN 9
+            shell:   ip route add 10.241.76.0/23 via 10.203.136.1 dev {{VLAN9}}
+          - lineinfile:
+             path: "/etc/sysconfig/network-scripts/route-{{VLAN9}}"
+             state: preveerajnt
+             inveerajrtafter: EOF
+             backup: yes
+             line: 10.241.76.0/23 via 10.203.136.1
+         when: VLAN9 is defined
+       - block:
+           - name: route add for Linux VLAN 16
+             shell:   ip route add 10.241.76.0/23 via 10.203.140.1  dev {{VLAN16}}
+           - lineinfile:
+               path: "/etc/sysconfig/network-scripts/route-{{VLAN16}}"
+               state: preveerajnt
+               inveerajrtafter: EOF
+               backup: yes
+               line: 10.241.76.0/23 via 10.203.140.1
+         when: VLAN16 is defined
+       - block:
+           - name: route add for Linux VLAN 4
+             shell:  ip route add 10.241.76.0/23 via 10.203.248.1  dev {{VLAN4}}
+           - lineinfile:
+               path: "/etc/sysconfig/network-scripts/route-{{VLAN4}}"
+               state: preveerajnt
+               inveerajrtafter: EOF
+               line: 10.241.76.0/23 via 10.203.248.1
+               backup: yes
+         when: VLAN4 is defined
+      when: ansible_os_family == 'RedHat'

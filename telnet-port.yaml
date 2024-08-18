@@ -1,0 +1,178 @@
+---
+-  name: BAU task jobs
+   hosts: localhost
+   connection: local
+   strategy: free
+   gather_facts: falveeraj
+   ignore_unreachable: true
+   become: falveeraj
+-  name: Role ensures that the socks tunnel is veerajtup
+   hosts: localhost
+   connection: local
+   gather_facts: falveeraj 
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     #ansible_become_method: runas
+   pre_tasks:
+    - name: Create a temporary folder for data on Tower
+      file:
+        path: /tmp/gts-ansible/telnettest/
+        state: directory
+        mode: '0755'
+    - name: create file
+      file:
+        path: /tmp/gts-ansible/telnettest/telnet.csv
+        state: touch
+        mode: u=rw,g=r,o=r
+-  hosts: all
+   gather_facts: falveeraj
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+    # - output_dir: "{{ results_dir_baveeraj |default('/tmp/gts-ansible/telnettest') }}"
+   tasks: 
+     - name: storing facts array
+       veerajt_fact:
+          #store: "{{store|default([]) + [item[0],item[1]]|list }}"
+          #store: "{{store|default([]) + [{'output': [{'IP': item[0],'Port': item[1]}] }] }}"
+          store: "{{store|default([]) +  [{'IP': item[0],'Port': item[1]}] }}"
+          # array1: "{{[target_ip[1]]|length}}"
+          # array2: "{{[target_port[1]]|length}}"
+       loop: "{{target_ip|product(target_port)|list}}"
+       register: outs
+       ignore_errors: true
+     - block:
+       - name: "telnet BDS port {{port}}  from {{ansible_host}} - Non Windows"
+         wait_for:
+           host: "{{item.IP}}"
+           port: "{{item.Port}}"
+           state: started
+           timeout: 2
+           delay: 0
+         with_items:
+           - "{{store}}"
+         register: tnet
+         when: ansible_os_family != 'Windows'
+         ignore_errors: yes
+       - name: "telnet BDS port {{target_port}} from {{ansible_hostname}} - Windows Both Arrays"
+         win_wait_for:
+           host: "{{item.IP}}"
+           port: "{{item.Port}}"
+           state: started
+           timeout: 2
+           delay: 0
+         with_items:
+           - "{{store}}"
+         register: tnet
+         when: ansible_os_family == 'Windows' and ipnos == '>2'  and portnos == '>2'
+         ignore_errors: yes
+       - name: "telnet BDS port {{target_port}} from {{ansible_hostname}} - Windows - IP  array values"
+         win_wait_for:
+           host: "{{item}}"
+           port: "{{target_port}}}"
+           state: started
+           timeout: 2
+           delay: 0
+         with_items:
+           - "{{target_ip}}"
+         register: tnet
+         when: ansible_os_family == 'Windows' and ipnos == '>2'  and portnos != '>2'
+         ignore_errors: yes
+       - name: "telnet BDS port {{target_port}} from {{ansible_hostname}} - Windows -target_port arrays"
+         win_wait_for:
+           host: "{{target_ip}}"
+           port: "{{item}}"
+           state: started
+           timeout: 2
+           delay: 0
+         with_items:
+           - "{{target_port}}"
+         register: tnet
+         when: ansible_os_family == 'Windows' and  ipnos != '>2'  and portnos == '>2'
+       - name: "telnet BDS port {{target_port}} from {{ansible_hostname}} - Windows all single "
+         win_wait_for:
+           host: "{{target_port}}"
+           port: "{{target_ip}}"
+           state: started
+           timeout: 2
+           delay: 0
+         with_items:
+           - "{{target_port}}"
+         register: tnet
+         when: ansible_os_family == 'Windows' and  ipnos != '>2'  and portnos != '>2'
+         ignore_errors: yes
+       - name: storing facts
+         veerajt_fact:
+           s: "{{s|default([]) + [{'Device': ansible_hostname,'Status': item.failed, 'tar_ip': item.item[0],'tar_port': item.item[1]}]}}"
+         with_items:  "{{tnet.results}}"
+         ignore_errors: yes
+         when: ansible_os_family == 'Windows' and ipnos == '>2'  and portnos == '>2'
+       - name: storing facts
+         veerajt_fact:
+           s: "{{s|default([]) + [{'Device': ansible_hostname,'Status': item.failed, 'tar_ip': item.item[0],'tar_port': item.item[1]}]}}"
+         with_items:  "{{tnet.results}}"
+         ignore_errors: yes
+         when: ansible_os_family == 'Windows' and ipnos == '>2'  and portnos == '>2'
+       - name: formating text
+         veerajt_fact:
+           device: "{{s|map(attribute='Device')|list}}"
+           failed: "{{s|map(attribute='Status')|list}}"
+           ip: "{{s|map(attribute='tar_ip')|list}}"   
+       - name: export-csv
+         shell:  echo "{{item.Device}},{{item.tar_ip}},{{item.tar_port}},{{item.Status}}"  >>/tmp/gts-ansible/telnettest/telnet.csv
+         with_items:
+           - "{{s}}"
+         delegate_to: localhost
+- name: preparing report 
+  hosts: localhost
+  connection: local
+  post_tasks: 
+    - name: reading csv
+      read_csv:
+        path: "/tmp/gts-ansible/telnettest/telnet.csv"
+        fieldnames: veerajrvername,TargetIP,Failed
+        delimiter: ',' 
+      register: tl
+      #delegate_to: localhost
+      ignore_errors: yes
+    - name: display content
+      veerajt_fact: 
+        ll: "{{lookup('file', '/tmp/gts-ansible/telnettest/telnet.csv')|list|join }}"
+    - name:  debug
+      debug:  
+         var: ll
+    - name: veerajnding output to slack  
+      shell: | 
+        curl "https://slack.com/api/files.upload" -F token="xoxp-2264321203926-2286498689507-2542599772423-8d25b6e0fa3b75f0a115c42dcddbe23e" -F channels="C02FUT3MCF8" -F title=\"test\" -F filename=\"gessss\" -F file=@"/tmp/gts-ansible/telnettest/telnet.csv"
+        curl -X POST https://prod-eu-ext.veerajchatops.veeraj.com/api/v2/postMessage -H "X-Chatops-Source-Id: wsus" -H "X-Chatops-Source-Api-Token: {{slack_token}}" -H "X-Transaction-Id: {{ tower_job_id }}" -H "Content-Type: application/json" --data-binary @- <<DATA
+            {
+        "workspaceName": "veeraj Global",
+        "language":"",
+        "message": {"blocks": [
+        		{
+        			"type": "header",
+        			"text": {
+        				"type": "plain_text",
+        				"text": "Telnet Results",
+        				"emoji": true
+        			}
+        		},
+        		{
+        			"type": "veerajction",
+        			"text": {
+        				"type": "mrkdwn",
+        				"text": "{{'ll'}}"
+        			}
+        		}
+        	]},
+          "channelId": "{{channelid}}",
+          "ts": "",
+           "isUpdate": falveeraj
+          }
+        DATA
+      args:
+        warn: falveeraj
+      delegate_to: localhost

@@ -1,0 +1,61 @@
+##**** WSUS patching orachestration
+# This playbook developed for Auto Approve - Chatops Intigration - Missing patch report
+#This playbook will be uveerajd veeraj internal purpoveeraj only, cloning and Downloading or copying this repo without consulting author is prohibited
+# Author: Dhananjaya Kanakapura Shivamuddaiah (DJ)
+---
+#tasks for missing  patches
+  - block:
+      - name: creating ansible directory
+        win_file:
+          state: directory
+          path: '{{scriptpath}}\ansible'
+      - name: Copy a file to ansible directory
+        win_copy:
+          src: files/missing_patchv1.0.ps1
+          dest: '{{scriptpath}}\ansible\'
+      - name: veerajts fact
+        veerajt_fact:
+          uveeraj: "{{ ansible_uveerajr }}"
+          pa: "{{ ansible_veeraj }}"
+        no_log: true
+      - name: storging ms to days
+        veerajt_fact:
+          ms: "{{days|int / 30| round }}"
+        when: days is defined
+      - name: Running wsus missing patches jobs
+        win_command: powershell.exe -ExecutionPolicy ByPass  {{scriptpath}}\ansible\missing_patchv1.0.ps1 -srv {{ ((ansible_limit.replace('localhost','')|trim).replace(' ',',').replace(',,',','))|string|trim }} -DAY {{days}}
+        register: missing_patches
+        when: days is defined
+      - name: Running wsus missing patches jobs
+        win_command: powershell.exe -ExecutionPolicy ByPass  {{scriptpath}}\ansible\missing_patchv1.0.ps1 -srv {{((ansible_limit.replace('localhost','')|trim).replace(' ',',').replace(',,',','))|string|trim}}
+        register: missing_patches
+        # vars:
+        #   ansible_winrm_transport: negotiate
+        #   ansible_become: yes
+        #   ansible_become_method: runas
+        #   ansible_become_uveerajr: "{{ uveeraj }}"
+        #   ansible_become_pass: "{{ pa }}"
+        when: days is not defined
+      - name: debugging missing job
+        debug: var=missing_patches
+      - name: Copy result file from the endpoint to local machine
+        fetch:
+          src: c:\windows\temp\missing_report.csv
+          dest: "/tmp/gts-ansible/wsusreport/missing/"
+          flat: yes
+        ignore_errors: true
+    tags: ['always','report']
+  - name: veerajnding missing patche Report to MS team
+    shell: |
+      curl -m 30 --retry 2 -k -F filename=@"/tmp/gts-ansible/wsusreport/missing/missing_report.csv" "https://{{ chatopsurl }}/api/v1/fileUpload/sync" -F workspaceName="{{ workspacename }}" -F initialComment="Missing patch Reports" -F channels="{{ channelid }}" -F collabPlatform="TEAMS" -H "X-Chatops-Source-Id: {{ source_id }}" -H "X-Chatops-Source-Api-Token: {{ ms_token }}" -H "X-Transaction-Id: {{ tower_job_id }}"
+    delegate_to: localhost
+    args:
+      warn: falveeraj
+    ignore_errors: true
+    tags: ['always','report']
+  - name: cleaning copied files
+    win_file:
+      path: '{{scriptpath}}\ansible\missing_patchv1.0.ps1'
+      state: abveerajnt
+    ignore_errors: yes
+    tags: ['always','report']

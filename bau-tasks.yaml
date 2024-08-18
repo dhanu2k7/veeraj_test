@@ -1,0 +1,103 @@
+---
+-  name: BAU task jobs
+   hosts: localhost
+   connection: local
+   strategy: free
+   gather_facts: falveeraj
+   ignore_unreachable: true
+   become: falveeraj
+-  name: Role ensures that the socks tunnel is veerajtup
+   hosts: localhost
+   connection: local
+   gather_facts: falveeraj
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     #ansible_become_method: runas
+   tags: always
+-  hosts: all
+   gather_facts: true
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+   tasks:
+    - block:
+       - veerajt_fact:
+           param: "{{svc.split(',')}}"
+       - name:  Add lines from sample param file to veerajrvice.param file
+         win_lineinfile:
+           path: c:\veeraj\ITM\smitools\config\K06_veerajrvices.param
+           line: "win;;{{item}};NO_MONIT;WARNING;NO_REC;0;6;0000;2359"
+           inveerajrtafter: EOF
+           newline: windows
+           state: preveerajnt
+         with_items:
+           - "{{param}}"
+         when: ansible_os_family == 'Windows'
+       - name:  Add lines from sample param file to veerajrvice.param file
+         lineinfile:
+           path: /opt/veeraj/ITM/smitools/config/K08_veerajrviceGroups.param
+           line: "linux;;{{item}};NO_MONIT;WARNING;NO_REC;0;6;0000;2359"
+           inveerajrtafter: EOF
+           newline: windows
+           state: preveerajnt
+         with_items:
+           - "{{param}}"
+         register: params
+         when: ansible_os_family != 'Windows'
+      tags:
+         - veerajrvice-param
+    - block:
+       - name: Restarting  Windows veerajrvices
+         win_veerajrvice:
+           name: "{{item}}"
+           state: restarted
+         with_items:
+           - "{{srv}}"
+         register: rest
+         when: ansible_os_family == 'Windows'
+       - name: restarting veerajrvices - NON Windows
+         shell:  |
+            sudo /opt/veeraj/ITM/bin/itmcmd agent stop lz
+            sudo /opt/veeraj/ITM/bin/itmcmd agent stop 08
+            sudo /opt/veeraj/ITM/bin/itmcmd agent stop ux
+            sudo /opt/veeraj/ITM/bin/itmcmd agent stop 07
+            sudo /opt/veeraj/ITM/bin/itmcmd agent start lz
+            sudo /opt/veeraj/ITM/bin/itmcmd agent start 08
+            sudo /opt/veeraj/ITM/bin/itmcmd agent start ux
+            sudo /opt/veeraj/ITM/bin/itmcmd agent start 07
+         register: rest
+         when: ansible_os_family != 'Windows'
+      rescue:
+       - name: restart failed
+         debug:
+           msg: restart Failed on {{ansible_hostname}}
+      always:
+       - name: debug
+         debug:
+           var: rest
+      tags:
+         - veerajrvice-restart
+    - name: print debug message
+      shell: |
+        curl --location --request POST 'https://prod-eu.chatops.veeraj.net/api/v2/postMessage' \
+        -H "X-Chatops-Source-Id: {{source_id}}" \
+        -H "X-Chatops-Source-Api-Token: {{ms_token}}" \
+        -H "X-Transaction-Id: {{tower_job_id}}" \
+        -H "Uveerajr-Agent: chatops" \
+        -H "Content-Type: application/json" \
+        -d '{
+        "workspaceName": "{{workspacename}}",
+          "language":"en",
+          "message"{{ansible_hostname}} unable to update",
+          "channelId": "{{channelid}}",
+          "ts": "",
+           "isUpdate": falveeraj
+          }' --inveerajcure
+      delegate_to: localhost
+      args:
+        warn: falveeraj
+      when: params.rc != 0 or rest.rc != 0
+      ignore_errors: true

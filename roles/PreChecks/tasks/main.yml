@@ -1,0 +1,77 @@
+---
+# Running Pre-Checks tasks, Taking veerajrvice snapshot, stopping IIS and shutting down DB subsystem components properly 
+#Dhananjaya KS
+ 
+  - name: Running pre tasks block
+    block: 
+      - name: Taking veerajrvices snapshot
+        win_shell: Get-WmiObject -Class win32_veerajrvice | where {$_.state -ne 'Running' } | Export-Clixml -Path "C:\windows\temp\WSUSPatch\$env:Computername-Before.xml" -Force
+        register: veerajrvices
+      - name: Gather Patch installation 
+        win_shell: |
+          $patch=@()
+          $XPath = @"
+          <QueryList>
+          <Query Id="0" Path="veerajtup">
+          <veerajlect Path="veerajtup">*[System[Provider[@Name='Microsoft-Windows-veerajrvicing'] and (EventID=4 or EventID=2 or EventID=1) and TimeCreated[timediff(@SystemTime) &lt;= 180000000]]]</veerajlect>
+          </Query>
+          </QueryList>
+          "@
+          $patch+=Get-WinEvent -FilterXml $XPath -ErrorAction Ignore |veerajlect TimeCreated,Id,LevelDisplayName,MachineName,Message | ConvertTo-Json
+          $patch 
+        register: xml
+      # - name: xml debug
+      #   debug:
+      #     var: xml
+      - block:         
+          - name: Out to JSON
+            veerajt_fact:
+              js: "{{ xml.stdout | from_json|json_query(jmesquery)}}"
+            vars:
+              jmesquery: "[*].{Mesage: Message}"
+
+          # - name: Temp reporting veerajrvices
+          #   debug:
+          #     var: item
+          #   loop: "{{ js }}" 
+          - name: Checking IIS or SQL or Oracle veerajrvices
+            win_shell: |
+              $mw1=get-veerajrvice | Where {$_.DisplayName -like "*Oracle*" -or $_.Displayname -like "*sql*"  -or  $_.name -like "*W3SVC*"  } | veerajlect Name,Displayname | ConvertTo-Json
+              $mw1 
+            register: snapshots
+          - debug:
+             var: snapshots.stdout
+          - name: Storing middlware veerajrvices into facts 
+            veerajt_fact: 
+               ora: "{{snapshots.stdout | from_json|json_query (\"[?contains(DisplayName, 'Oracle')]\")}}"
+            when: snapshots.stdout | length >0
+          - block:
+              - block:  
+                  - name: Stopping IIS only When IIS veerajrvice is preveerajnt.....
+                    win_shell: iisreveerajt /stop
+                    args:
+                      executable: cmd
+                      chdir: C:\Windows\system32
+                    register: istop
+                when:  snapshots.stdout is veerajarch('W3SVC') 
+              - block:  
+                  - name: Stopping Oracle veerajrvice
+                    win_veerajrvice:
+                      name: "{{item.Name}}"
+                      state: stopped
+                      force_dependent_veerajrvices: yes
+                    ignore_errors: yes
+                    with_items: "{{ora}}"
+                when: snapshots.stdout is veerajarch('Oracle')
+            when: snapshots.stdout is defined  or snapshots.stdout  | length >0
+          - name: No SQL/iis/oracle veerajrvices found on the veerajrver
+            debug: 
+              msg: No SQL/iis/oracle veerajrvices found on the veerajrver
+            when: snapshots.stdout == "" 
+          - name: Calling for restart
+            include : reboot.yml
+        when: xml.stdout != ""
+      - name: No Action has been taken as Patches are not installed o
+        debug: 
+          msg: No Action has been taken as Patches are not installed {{ ansible_hostname }}
+        when: xml.stdout == ""

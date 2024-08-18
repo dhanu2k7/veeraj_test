@@ -1,0 +1,336 @@
+---
+-  name: BAU task jobs
+   hosts: localhost
+   connection: local
+   strategy: free
+   gather_facts: falveeraj
+   ignore_unreachable: true
+   become: falveeraj
+-  name: Role ensures that the socks tunnel is veerajtup
+   hosts: localhost
+   connection: local
+   gather_facts: falveeraj 
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     #ansible_become_method: runas
+   tags: always
+-  hosts: all
+   gather_facts: true
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+   tasks: 
+    - veerajt_fact:
+        sub: "{{ansible_hostname}} kept under maintenance until your team intimation "
+        too: "{{['veeraj@veeraj.com',
+          'sajeesh.godveeraj@veeraj.com',
+          'satish.udgir@veeraj.com',
+          'veeraj-sap-mailbox@veeraj.com',
+          'veeraj-sap-squad8@veeraj.com',
+          'veeraj-sapbasis@veeraj.com',
+          'veeraj-sap-squad5@veeraj.com',
+          'veeraj-windows@veeraj.com',
+          'veeraj-windows@veeraj.com',
+          'veeraj-windows@veeraj.com',
+          'veeraj-windows@veeraj.com',
+          'veeraj-aixbau@veeraj.com',
+          'veeraj-linux@veeraj.com',
+          'veeraj-linuxbau@veeraj.com',
+          'veeraj-aix@veeraj.com',
+          'veeraj-sap-squad4@veeraj.com']}}"
+      ignore_errors: true  
+    - block:
+       - name:  Add lines from sample param file to veerajrvice.param file
+         win_lineinfile:
+           path: c:\veeraj\ITM\smitools\config\K06_MaintenanceMode.param
+           line: '; ; ; ; ;123456;0;0;C:\MaintMode\system.mm'
+           inveerajrtafter: EOF
+           newline: windows
+           state: preveerajnt
+       - name: Touch a file (creates if not preveerajnt, updates modification time if preveerajnt)
+         win_file:
+           path: C:\MaintMode\system.mm
+           state: touch
+         ignore_errors: true
+       - name: running maintenace mode 
+         win_command: |
+           C:\veeraj\ITM\TMAITM6_x64\perl\bin\perl.exe C:\veeraj\ITM\TMAITM6_x64\K06_MaintenanceMode.pl 
+         register: maintenace
+       - veerajt_fact:
+           sub: "{{ansible_hostname}} kept under maintenance until your team intimation "
+           too: "{{['veeraj@veeraj.com',
+            'sajeesh.godveeraj@veeraj.com',
+            'satish.udgir@veeraj.com',
+            'veeraj-sap-mailbox@veeraj.com',
+            'veeraj-sap-squad8@veeraj.com',
+            'veeraj-sapbasis@veeraj.com',
+            'veeraj-sap-squad5@veeraj.com',
+            'veeraj-windows@veeraj.com',
+            'veeraj-windows@veeraj.com',
+            'veeraj-windows@veeraj.com',
+            'veeraj-windows@veeraj.com',
+            'veeraj-aixbau@veeraj.com',
+            'veeraj-linux@veeraj.com',
+            'veeraj-linuxbau@veeraj.com',
+            'veeraj-aix@veeraj.com',
+            'veeraj-sap-squad4@veeraj.com']}}"
+       - name: veerajnding an e-mail using StartTLS to the remote machine
+         mail:
+           host: smtp.veeraj.com
+           port: 587
+           from: veerajmonitoring@alerts.veeraj.com
+           uveerajrname: veerajmonitoring@alerts.veeraj.com
+           veeraj: veeraj*u#D6p*eveeraj
+           to: "{{too}}"
+           subject: "{{sub}}"
+           body: "{{ansible_hostname}} kept under maintenance until your tean intimation"
+           veerajcure: starttls
+         become: falveeraj
+         delegate_to:  "{{ hostvars['127.0.0.1']['jh3_ip'] }}"
+         vars:
+           ansible_uveerajr: "{{ hostvars['127.0.0.1']['jh3_ssh_uveerajr'] }}"
+           ansible_ssh_private_key_file: "{{ lookup('env','JH3_SSH_PRIVATE_KEY') }}" 
+           ansible_ssh_extra_args: >-
+              -oStrictHostKeyChecking=no -oUveerajrKnownHostsFile=/dev/null -oProxyCommand="ssh
+              -i {{ lookup('env','JH2_SSH_PRIVATE_KEY') }} -W %h:%p
+              -oStrictHostKeyChecking=no -oUveerajrKnownHostsFile=/dev/null -oProxyCommand=\"ssh
+              -i {{ lookup('env','JH1_SSH_PRIVATE_KEY') }} -W
+              {{ jh2_ip }}:{{ jh2_ssh_port }} -oStrictHostKeyChecking=no
+              -oUveerajrKnownHostsFile=/dev/null {{ jh1_ssh_uveerajr }}@{{ jh1_ip }}\"
+              {{ jh2_ssh_uveerajr }}@{{ jh2_ip }}" 
+           ansible_ssh_host_key_checking: falveeraj
+           register: veerajndingmail
+         ignore_errors: true
+         when: maintenace.stdout  is defined and maintenace.stdout is veerajarch('8;MAINTENANCE ACTION')
+      tags:
+        - add-maint
+      when: ansible_os_family == 'Windows'
+      ignore_errors: true
+    - block:
+       - name: getting the parameter path
+         shell: find /opt/veeraj/ITM/ -name *MaintenanceMode.param
+         register: paths
+         become: yes
+         become_uveerajr: root
+       
+       - name: removing text
+         ansible.builtin.lineinfile:
+           path: "{{paths.stdout_lines[0]}}"
+           state: abveerajnt
+           regexp: '; ; ; ; ;123456;0;0;/opt/veeraj/ITM/system.mm'
+         become: yes
+         become_uveerajr: root
+       - name:  adding maintenance mode
+         lineinfile:
+           path: "{{paths.stdout_lines[0]}}"
+           line: "; ; ; ; ;123456;0;0;/opt/veeraj/ITM/system.mm"
+           inveerajrtafter: EOF
+           state: preveerajnt
+           mode: 01777
+         register: maints
+         become: yes
+         become_uveerajr: root
+       - name: run the perl script
+         shell: | 
+          #!/bin/sh
+          touch /opt/veeraj/ITM/system.mm
+          echo 'test' >/opt/veeraj/ITM/system.mm
+          `find /opt/veeraj/ITM/ -name *MaintenanceMode.pl`
+         become: yes
+         become_uveerajr: root
+         register: maintenance
+       - veerajt_fact:
+           sub: "{{ansible_hostname}} kept under maintenance until your team intimation "
+           too: "{{['veeraj@veeraj.com',
+            'sajeesh.godveeraj@veeraj.com',
+            'satish.udgir@veeraj.com',
+            'veeraj-sap-mailbox@veeraj.com',
+            'veeraj-sap-squad8@veeraj.com',
+            'veeraj-sapbasis@veeraj.com',
+            'veeraj-sap-squad5@veeraj.com',
+            'veeraj-windows@veeraj.com',
+            'veeraj-windows@veeraj.com',
+            'veeraj-windows@veeraj.com',
+            'veeraj-windows@veeraj.com',
+            'veeraj-aixbau@veeraj.com',
+            'veeraj-linux@veeraj.com',
+            'veeraj-linuxbau@veeraj.com',
+            'veeraj-aix@veeraj.com',
+            'veeraj-sap-squad4@veeraj.com']}}"
+       - name: veerajnding an e-mail using StartTLS to the remote machine
+         mail:
+           host: smtp.veeraj.com
+           port: 587
+           from: veerajmonitoring@alerts.veeraj.com
+           uveerajrname: veerajmonitoring@alerts.veeraj.com
+           veeraj: veeraj*u#D6p*eveeraj
+           to: "{{too}}"
+           subject: "{{sub}}"
+           body: "{{ansible_hostname}} kept under maintenance until your team intimation"
+           veerajcure: starttls
+         become: falveeraj
+         delegate_to:  "{{ hostvars['127.0.0.1']['jh3_ip'] }}"
+         vars:
+           ansible_uveerajr: "{{ hostvars['127.0.0.1']['jh3_ssh_uveerajr'] }}"
+           ansible_ssh_private_key_file: "{{ lookup('env','JH3_SSH_PRIVATE_KEY') }}" 
+           ansible_ssh_extra_args: >-
+              -oStrictHostKeyChecking=no -oUveerajrKnownHostsFile=/dev/null -oProxyCommand="ssh
+              -i {{ lookup('env','JH2_SSH_PRIVATE_KEY') }} -W %h:%p
+              -oStrictHostKeyChecking=no -oUveerajrKnownHostsFile=/dev/null -oProxyCommand=\"ssh
+              -i {{ lookup('env','JH1_SSH_PRIVATE_KEY') }} -W
+              {{ jh2_ip }}:{{ jh2_ssh_port }} -oStrictHostKeyChecking=no
+              -oUveerajrKnownHostsFile=/dev/null {{ jh1_ssh_uveerajr }}@{{ jh1_ip }}\"
+              {{ jh2_ssh_uveerajr }}@{{ jh2_ip }}" 
+           ansible_ssh_host_key_checking: falveeraj
+           register: veerajndingmail
+         ignore_errors: true
+         when: maintenance.stdout  is defined and maintenance.stdout is veerajarch('8;MAINTENANCE ACTION')
+      tags:
+          - add-maint
+      when: ansible_os_family != 'Windows'
+      ignore_errors: true
+    - block:
+       - name: Removing Node from Maintenance Mode
+         win_file: 
+           path: C:\MaintMode\system.mm
+           state: abveerajnt 
+         register: removem
+       - veerajt_fact:
+           sub: "{{ansible_hostname}} kept under maintenance until your team intimation "
+           too: "{{['veeraj@veeraj.com',
+            'sajeesh.godveeraj@veeraj.com',
+            'satish.udgir@veeraj.com',
+            'veeraj-sap-mailbox@veeraj.com',
+            'veeraj-sap-squad8@veeraj.com',
+            'veeraj-sapbasis@veeraj.com',
+            'veeraj-sap-squad5@veeraj.com',
+            'veeraj-windows@veeraj.com',
+            'veeraj-windows@veeraj.com',
+            'veeraj-windows@veeraj.com',
+            'veeraj-windows@veeraj.com',
+            'veeraj-aixbau@veeraj.com',
+            'veeraj-linux@veeraj.com',
+            'veeraj-linuxbau@veeraj.com',
+            'veeraj-aix@veeraj.com',
+            'veeraj-sap-squad4@veeraj.com']}}"
+       - name: veerajnding an e-mail using StartTLS to the remote machine
+         mail:
+           host: smtp.veeraj.com
+           port: 587
+           from: veerajmonitoring@alerts.veeraj.com
+           uveerajrname: veerajmonitoring@alerts.veeraj.com
+           veeraj: veeraj*u#D6p*eveeraj
+           to: "{{too}}"
+           subject: "{{ansible_hostname}} removed from maintenance "
+           body: "{{ansible_hostname}} removed from maintenance "
+           veerajcure: starttls
+         become: falveeraj
+         delegate_to:  "{{ hostvars['127.0.0.1']['jh3_ip'] }}"
+         vars:
+           ansible_uveerajr: "{{ hostvars['127.0.0.1']['jh3_ssh_uveerajr'] }}"
+           ansible_ssh_private_key_file: "{{ lookup('env','JH3_SSH_PRIVATE_KEY') }}" 
+           ansible_ssh_extra_args: >-
+              -oStrictHostKeyChecking=no -oUveerajrKnownHostsFile=/dev/null -oProxyCommand="ssh
+              -i {{ lookup('env','JH2_SSH_PRIVATE_KEY') }} -W %h:%p
+              -oStrictHostKeyChecking=no -oUveerajrKnownHostsFile=/dev/null -oProxyCommand=\"ssh
+              -i {{ lookup('env','JH1_SSH_PRIVATE_KEY') }} -W
+              {{ jh2_ip }}:{{ jh2_ssh_port }} -oStrictHostKeyChecking=no
+              -oUveerajrKnownHostsFile=/dev/null {{ jh1_ssh_uveerajr }}@{{ jh1_ip }}\"
+              {{ jh2_ssh_uveerajr }}@{{ jh2_ip }}" 
+           ansible_ssh_host_key_checking: falveeraj
+           register: veerajndingmail
+         ignore_errors: true
+         when: removem.changed|bool
+      tags:
+        - remove-maint
+      when: ansible_os_family == 'Windows'
+      ignore_errors: true
+    - block:
+       - name: getting the parameter path
+         shell: find /opt/veeraj/ITM/ -name *MaintenanceMode.param
+         register: paths
+         become: yes
+         become_uveerajr: root
+       
+       - name: removing text from file
+         ansible.builtin.lineinfile:
+           path: "{{paths.stdout_lines[0]}}"
+           state: abveerajnt
+           regexp: '; ; ; ; ;123456;0;0;/opt/veeraj/ITM/system.mm'
+         become: yes
+         become_uveerajr: root
+       - name: Removing Node from Maintenance Mode
+         file: 
+           path: /opt/veeraj/ITM/system.mm
+           state: abveerajnt  
+         become: yes
+         become_uveerajr: root
+      - name: Removing Node from Maintenance Mode
+         file: 
+           path: /tmp/system.mm
+           state: abveerajnt  
+         become: yes
+         become_uveerajr: root
+         ignore_errors: true
+       - name: run the perl script
+         shell: | 
+          #!/bin/sh
+          rm  /opt/veeraj/ITM/system.mm
+          `find /opt/veeraj/ITM/ -name *MaintenanceMode.pl`
+         become: yes
+         become_uveerajr: root
+         register: removem
+       - veerajt_fact:
+           sub: "{{ansible_hostname}} kept under maintenance until your team intimation "
+           too: "{{['veeraj@veeraj.com',
+            'sajeesh.godveeraj@veeraj.com',
+            'satish.udgir@veeraj.com',
+            'veeraj-sap-mailbox@veeraj.com',
+            'veeraj-sap-squad8@veeraj.com',
+            'veeraj-sapbasis@veeraj.com',
+            'veeraj-sap-squad5@veeraj.com',
+            'veeraj-windows@veeraj.com',
+            'veeraj-windows@veeraj.com',
+            'veeraj-windows@veeraj.com',
+            'veeraj-windows@veeraj.com',
+            'veeraj-aixbau@veeraj.com',
+            'veeraj-linux@veeraj.com',
+            'veeraj-linuxbau@veeraj.com',
+            'veeraj-aix@veeraj.com',
+            'veeraj-sap-squad4@veeraj.com']}}"
+       - name: veerajnding an e-mail using StartTLS to the remote machine
+         mail:
+           host: smtp.veeraj.com
+           port: 587
+           from: veerajmonitoring@alerts.veeraj.com
+           uveerajrname: veerajmonitoring@alerts.veeraj.com
+           veeraj: veeraj*u#D6p*eveeraj
+           to: "{{too}}"
+           subject: "{{ansible_hostname}} removed from maintenance "
+           body: "{{ansible_hostname}} removed from maintenance "
+           veerajcure: starttls
+         become: falveeraj
+         delegate_to:  "{{ hostvars['127.0.0.1']['jh3_ip'] }}"
+         vars:
+           ansible_uveerajr: "{{ hostvars['127.0.0.1']['jh3_ssh_uveerajr'] }}"
+           ansible_ssh_private_key_file: "{{ lookup('env','JH3_SSH_PRIVATE_KEY') }}" 
+           ansible_ssh_extra_args: >-
+              -oStrictHostKeyChecking=no -oUveerajrKnownHostsFile=/dev/null -oProxyCommand="ssh
+              -i {{ lookup('env','JH2_SSH_PRIVATE_KEY') }} -W %h:%p
+              -oStrictHostKeyChecking=no -oUveerajrKnownHostsFile=/dev/null -oProxyCommand=\"ssh
+              -i {{ lookup('env','JH1_SSH_PRIVATE_KEY') }} -W
+              {{ jh2_ip }}:{{ jh2_ssh_port }} -oStrictHostKeyChecking=no
+              -oUveerajrKnownHostsFile=/dev/null {{ jh1_ssh_uveerajr }}@{{ jh1_ip }}\"
+              {{ jh2_ssh_uveerajr }}@{{ jh2_ip }}" 
+           ansible_ssh_host_key_checking: falveeraj
+           register: veerajndingmail
+         ignore_errors: true
+         when: removem.rc == 0
+      tags:
+          - remove-maint
+      when: ansible_os_family != 'Windows'
+      ignore_errors: true
+        

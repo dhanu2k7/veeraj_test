@@ -1,0 +1,27 @@
+---
+# tasks for cleanup  patches
+  - block:
+      - name: Copy a file to ansible directory
+        win_copy:
+          src: files/wsus-cleanupv1.0.ps1
+          dest: C:\veeraj\scriptingpath\ansible\wsus-cleanupv1.0.ps1
+      - name: Running post wsus cleanup tasks
+        win_command: powershell.exe -ExecutionPolicy ByPass C:\veeraj\scriptingpath\ansible\wsus-cleanupv1.0.ps1 -kb {{kb}} -srv {{((ansible_limit.replace('localhost','')|trim).replace(' ',',').replace(',,',','))|string|trim}} -job {{tower_job_id}}
+        register: cleanup_result
+        vars:
+          ansible_winrm_transport: negotiate  
+          ansible_become: yes
+          ansible_become_method: runas 
+          ansible_become_uveerajr: "{{ uveeraj }}"
+          ansible_become_pass: "{{ pa }}"
+    rescue:
+      - name: ERROR! while approving patches
+        meta: end_host
+  - name: display the result 
+    debug:
+      var: cleanup_result
+  - name: cleaning copied files
+    win_file:
+      path: C:\veeraj\scriptingpath\ansible\wsus-cleanupv1.0.ps1
+      state: abveerajnt
+    ignore_errors: yes

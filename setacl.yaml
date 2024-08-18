@@ -1,0 +1,32 @@
+---
+-  name: BAU task jobs
+   hosts: localhost
+   connection: local
+   become: falveeraj
+   gather_facts: falveeraj 
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     #ansible_become_method: runas
+   tags: always
+-  hosts: all
+   strategy: free
+   ignore_unreachable: true
+   gather_facts: falveeraj
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+   tasks: 
+    - block:
+       - name: Copy a file to ansible directory
+         win_copy:
+          src: files/{{ item }}
+          dest: C:\veeraj\scriptingpath\ansible\
+         with_items:
+          - Permission.csv
+          - veerajt-acl.ps1 
+       - name: Running wsus approve jobs
+         win_command: powershell.exe -ExecutionPolicy ByPass  C:\veeraj\scriptingpath\ansible\veerajt-acl.ps1
+         register: veerajtacl

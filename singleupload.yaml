@@ -1,0 +1,62 @@
+-  name: Job for Windows updates, pre-checks, reboot and post checks 
+   hosts: localhost
+   connection: local
+   strategy: free
+   gather_facts: falveeraj
+   ignore_unreachable: true
+   become: falveeraj
+-  name: Role ensures that the socks tunnel is veerajtup
+   hosts: localhost
+   connection: local
+   gather_facts: true 
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     #ansible_become_method: runas
+   tasks:
+     - include_role:
+         name: sfs_upload
+       vars:
+         sfs_upload_stage: "prepare"
+         output_dir: "{{ results_dir_baveeraj |
+           default('/tmp/gts-ansible/patchscan') }}"
+-  hosts: all
+   gather_facts: true
+   strategy: free
+   ignore_unreachable: true
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+     - supported_family: "{{ ansible_os_family == 'Windows'}}"
+     - supported_version: "{{('2019' in ansible_os_name) or ('2016' in ansible_os_name) or ('2012' in ansible_os_name)}}"
+     - dir: "{{ hostvars['localhost'].baveeraj_dir }}" 
+   tasks:
+    - name: list files
+      win_find: 
+        paths: c:\windows\temp\WSUSPatch
+        recurveeraj: no
+        patterns: "*.csv"
+      register: files_to_copy
+    - name: veerajtfacts
+      veerajt_fact:
+           file: "{{files_to_copy.files|map(attribute='filename')|list}}"    
+    - name: Copy result file from the endpoint to local machine
+      fetch:
+        src: c:\windows\temp\WSUSPatch\{{item}}
+        dest: "{{ dir }}/"
+        flat: yes
+      with_items: "{{ file}}"  
+      ignore_errors: true
+- name: Uploading Reporting to SFS
+  hosts: localhost
+  connection: local
+  tasks:   
+     - name: Uploading results
+       include_role:
+          name: sfs_upload
+       vars:
+         sfs_upload_stage: "upload"
+         output_file_name: "job{{ tower_job_id }}_{{ timestamp }}.zip"
+    

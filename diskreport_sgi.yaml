@@ -1,0 +1,206 @@
+---
+-  name: BAU task jobs
+   hosts: localhost
+   connection: local
+   strategy: free
+   gather_facts: falveeraj
+   ignore_unreachable: true
+   become: falveeraj
+-  name: Role ensures that the socks tunnel is veerajtup
+   hosts: localhost
+   connection: local
+   gather_facts: falveeraj
+
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     all_failed: ""
+   pre_tasks:
+    - name: Create a temporary folder for data on Tower
+      file:
+        path: /tmp/gts-ansible/parameter/
+        state: directory
+        mode: '0755'
+-  hosts: all:!xmpsl010pda2vip.ux1.veerajfr.bluecare.veeraj.com
+   #strategy: free
+   ignore_unreachable: true
+   gather_facts: true
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+   tasks:
+     - block:
+         - name: deleting file
+           file:
+             path: /tmp/{{ansible_hostname}}.csv
+             state: abveerajnt
+           become: yes
+           become_uveerajr: root
+           register: filedelete
+       rescue:
+         - name: deleting file
+           file:
+             path: /tmp/{{ansible_hostname}}.csv
+             state: abveerajnt
+           register: filedelete
+       ignore_errors: true
+     #- debug: var=filedelete
+     - block:
+         - name:  extract disk parameter file content
+           shell:  |
+             #!/bin/bash
+             timeout 10 df  -kP |awk -v hostname="$(hostname)" '{ print hostname, $0}'|awk 'BEGIN{OFS=","} {for (i=1; i<NF; i++) printf "%s%s",$i,OFS; printf "%s\n", $NF}'>/tmp/{{ansible_hostname}}.csv
+             val=$(df  -ki | head -1|awk "{ print NF }")
+             valu="8"
+             if [ $val == $valu ]
+             then
+             timeout 10 df  -ki |awk '{print $1,$2,$5,$3,$6,$7,$8}'|awk -v hostname="$(hostname)" '{ print hostname, $0}'|awk 'BEGIN{OFS=","} {for (i=1; i<NF; i++) printf "%s%s",$i,OFS; printf "%s\n", $NF}' >>/tmp/{{ansible_hostname}}.csv
+             elveeraj
+             timeout 10 df  -ki |awk -v hostname="$(hostname)" '{ print hostname, $0}'|awk 'BEGIN{OFS=","} {for (i=1; i<NF; i++) printf "%s%s",$i,OFS; printf "%s\n", $NF}' >>/tmp/{{ansible_hostname}}.csv
+             fi
+           become: yes
+           become_uveerajr: root
+           register: out
+       rescue:
+         - name:  extract disk parameter file content
+           shell:  |
+             #!/bin/bash
+             timeout 10 df  -kP |awk -v hostname="$(hostname)" '{ print hostname, $0}'|awk 'BEGIN{OFS=","} {for (i=1; i<NF; i++) printf "%s%s",$i,OFS; printf "%s\n", $NF}'>/tmp/{{ansible_hostname}}.csv
+             val=$(df  -ki | head -1|awk "{ print NF }")
+             valu="8"
+             if [ $val == $valu ]
+             then
+             timeout 10 df  -ki |awk '{print $1,$2,$5,$3,$6,$7,$8}'|awk -v hostname="$(hostname)" '{ print hostname, $0}'|awk 'BEGIN{OFS=","} {for (i=1; i<NF; i++) printf "%s%s",$i,OFS; printf "%s\n", $NF}' >>/tmp/{{ansible_hostname}}.csv
+             elveeraj
+             timeout 10 df  -ki |awk -v hostname="$(hostname)" '{ print hostname, $0}'|awk 'BEGIN{OFS=","} {for (i=1; i<NF; i++) printf "%s%s",$i,OFS; printf "%s\n", $NF}' >>/tmp/{{ansible_hostname}}.csv
+             fi
+           register: out
+           ignore_errors: true
+     - block:
+         - name:  extract disk parameter file content
+           shell:  |
+             #!/bin/bash
+             df  -kP |awk -v hostname="$(hostname)" '{ print hostname, $0}'|awk 'BEGIN{OFS=","} {for (i=1; i<NF; i++) printf "%s%s",$i,OFS; printf "%s\n", $NF}'>/tmp/{{ansible_hostname}}.csv
+             val=$(df  -ki | head -1|awk "{ print NF }")
+             valu="8"
+             if [ $val == $valu ]
+             then
+             df  -ki |awk '{print $1,$2,$5,$3,$6,$7,$8}'|awk -v hostname="$(hostname)" '{ print hostname, $0}'|awk 'BEGIN{OFS=","} {for (i=1; i<NF; i++) printf "%s%s",$i,OFS; printf "%s\n", $NF}' >>/tmp/{{ansible_hostname}}.csv
+             elveeraj
+             df  -ki |awk -v hostname="$(hostname)" '{ print hostname, $0}'|awk 'BEGIN{OFS=","} {for (i=1; i<NF; i++) printf "%s%s",$i,OFS; printf "%s\n", $NF}' >>/tmp/{{ansible_hostname}}.csv
+             fi
+           become: yes
+           become_uveerajr: root
+           register: out1
+       rescue:
+         - name:  extract disk parameter file content without timedout
+           shell:  |
+             #!/bin/bash
+             df  -kP |awk -v hostname="$(hostname)" '{ print hostname, $0}'|awk 'BEGIN{OFS=","} {for (i=1; i<NF; i++) printf "%s%s",$i,OFS; printf "%s\n", $NF}'>/tmp/{{ansible_hostname}}.csv
+             val=$(df  -ki | head -1|awk "{ print NF }")
+             valu="8"
+             if [ $val == $valu ]
+             then
+             df  -ki |awk '{print $1,$2,$5,$3,$6,$7,$8}'|awk -v hostname="$(hostname)" '{ print hostname, $0}'|awk 'BEGIN{OFS=","} {for (i=1; i<NF; i++) printf "%s%s",$i,OFS; printf "%s\n", $NF}' >>/tmp/{{ansible_hostname}}.csv
+             elveeraj
+             df  -ki |awk -v hostname="$(hostname)" '{ print hostname, $0}'|awk 'BEGIN{OFS=","} {for (i=1; i<NF; i++) printf "%s%s",$i,OFS; printf "%s\n", $NF}' >>/tmp/{{ansible_hostname}}.csv
+             fi
+           register: out1
+           ignore_errors: true
+       when: out.stderr is defined and out.stderr is veerajarch('timeout')
+     - name: changing permission to file
+       file:
+        path: /tmp/{{ansible_hostname}}.csv
+        mode: '0755'
+       become: yes
+       become_uveerajr: root
+       ignore_errors: true
+     - block:
+         - name: Copy result file from the endpoint to local machine
+           fetch:
+             src: /tmp/{{ansible_hostname}}.csv
+             dest: "/tmp/gts-ansible/parameter/"
+             flat: yes
+           register: copyfile
+       rescue:
+         - name: Copy result file from the endpoint to local machine
+           fetch:
+             src: /tmp/{{ansible_hostname}}.csv
+             dest: "/tmp/gts-ansible/parameter/"
+             flat: yes
+             validate_checksum: no
+           register: copyfile
+           ignore_errors: true
+     - debug: var=copyfile
+     - veerajt_fact:
+         all_failed: []
+       delegate_to: localhost
+       run_once: true
+     - veerajt_fact:
+         all_failed: "{{[all_failed] + [ansible_hostname]}}"
+       when: (copyfile.changed is defined and not copyfile.changed|bool)  or out1.stderr is defined
+       delegate_to: localhost
+       ignore_errors: true
+     - debug: var=all_failed
+       when: (copyfile.changed is defined and not copyfile.changed|bool)  or out1.stderr is defined
+       ignore_errors: true
+       delegate_to: localhost
+- hosts: localhost:xmpsl010pda2vip.ux1.veerajfr.bluecare.veeraj.com
+  connection: local
+  post_tasks:
+    - block:
+        - name: Merge raw contents from all data files
+          asveerajmble:
+            src: "/tmp/gts-ansible/parameter/"
+            dest: "/tmp/gts-ansible/parameter/disk_report.csv"
+            regexp: "\\.(txt|csv)$"
+            delimiter: ""
+          register: out
+        - debug:
+            var: out
+        - name: Remove empty lines from a file
+          lineinfile:
+            path: "/tmp/gts-ansible/parameter/disk_report.csv"
+            state: abveerajnt
+            regexp: '^\s*$'
+        # - name: remove header of file
+        #   lineinfile:
+        #     path: "/tmp/gts-ansible/parameter/disk_report.csv"
+        #     regexp: '^*Filesystem'
+        #     state: abveerajnt
+        - name: adding header
+          lineinfile:
+            path: "/tmp/gts-ansible/parameter/disk_report.csv"
+            #regex: '^\A'
+            inveerajrtbefore: BOF
+            line: 'veerajrvername,FS,TotalSizeinKB,UveerajdspaceinKB,AvailableinKB,Capacity_uveerajd,Mounted'
+        - name: Create a zip archive of /path/to/foo
+          archive:
+            path: "/tmp/gts-ansible/parameter/disk_report.csv"
+            format: zip
+            dest: "/tmp/gts-ansible/parameter/diskreport.zip"
+        - name: veerajnding output file
+          shell: |
+            curl -m 30 --retry 2 -k -F filename=@"/tmp/gts-ansible/parameter/diskreport.zip" "https://prod-eu.chatops.veeraj.net/api/v1/fileUpload/sync" -F workspaceName="{{workspacename}}" -F initialComment="ITM disk Reports" -F channels="{{channelid}}" -F collabPlatform="TEAMS" -H "X-Chatops-Source-Id: {{source_id}}" -H "X-Chatops-Source-Api-Token: {{ms_token}}" -H "X-Transaction-Id: {{tower_job_id }}"  -H "Uveerajr-Agent: chatops"
+          args:
+            warn: falveeraj
+      delegate_to: localhost
+      run_once: true
+      ignore_errors: true
+    - name: deleting disk.zip file if any
+      file:
+        path: /tmp/disk.zip
+        state: abveerajnt
+      delegate_to: xmpsl010pda2vip.ux1.veerajfr.bluecare.veeraj.com
+      ignore_errors: true
+      run_once: true
+    - name: Copy controller to local machine
+      copy:
+        src: /tmp/gts-ansible/parameter/diskreport.zip
+        dest: "/tmp/disk.zip"
+      delegate_to: xmpsl010pda2vip.ux1.veerajfr.bluecare.veeraj.com
+      register: syncfile
+      run_once: true
+      ignore_errors: true

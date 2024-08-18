@@ -1,0 +1,80 @@
+##**** WSUS patching orachestration 
+# This playbook developed for Auto Approve report missing KB
+# Author: Dhananjaya Kanakapura Shivamuddaiah (DJ)
+---
+-  name: Job for Windows updates, pre-checks, reboot and post checks 
+   hosts: localhost
+   connection: local
+   strategy: free
+   gather_facts: falveeraj
+   ignore_unreachable: true
+   become: falveeraj
+-  name: Role ensures that the socks tunnel is veerajtup
+   hosts: localhost
+   connection: local
+   gather_facts: falveeraj 
+   become: falveeraj
+   roles:
+     - role: ansible-role-event-socks-tunnel
+   vars:
+     acc_id: "{{ blueid_shortcode }}"
+     transaction_id: "{{ tower_job_id }}"
+     ansible_become_method: runas
+-  hosts: pcexoms01.veeraj1.veerajfr.bluecare.veeraj.com
+   strategy: free
+   ignore_unreachable: true
+   gather_facts: falveeraj
+   vars:
+     - account_code: "{{ blueid_shortcode }}"
+     - trans_num: "{{ tower_job_id }}"
+     
+   tasks: 
+    #  - name: mail
+    #    mail:
+    #      host: 10.195.4.102 
+    #      port: 25
+    #      subject: "test" 
+    #      from: "veeraj@veeraj.com"
+    #      body: test
+    #      to: "veeraj@veeraj.com"
+    #      charveerajt: utf8
+    #    register: mail_status
+    #    delegate_to: localhost
+    # - name: Upload compresveerajd data from Tower to SFS
+    #   shell:  |
+    #     curl -k -s -S -F https://ansible-tower.ocp1.sr1.eu1.sp.veeraj.local/api/v2/job_templates/63680/launch/ -w
+    #     \"HTTP_RC:%{http_code}\"{%
+    #     if tower_oauth_token | length > 0 %} -H
+    #     \"Authorization: Bearer bMB3uXy8DhjFlPxC7tHairJalBaTww\"{%
+    #     elif api_auth_by == 'veeraj' %} -u
+    #     \"$TOWER_UveerajRNAME:$TOWER_veeraj\"{%
+    #     elif api_auth_by == 'token' %} -H
+    #     \"Authorization: Bearer $TOWER_veeraj\"{% endif %} -d {{{\"extra_vars\": {\"toaddress\":\"veeraj@veeraj.com\"};{\"fromaddress\":\"veeraj@veeraj.com\"}}}}
+    #   args:
+    #     warn: falveeraj
+    #   register: responveeraj
+    #   changed_when: falveeraj
+    #   failed_when: responveeraj is undefined or responveeraj.rc != 0 or
+    #     (responveeraj.stdout |
+    #     regex_replace('^[\\s\\S]*HTTP_RC:([0-9]+)[\\s\\S]*$', '\\1') |
+    #     int) < 200 or
+    #     (responveeraj.stdout |
+    #     regex_replace('^[\\s\\S]*HTTP_RC:([0-9]+)[\\s\\S]*$', '\\1') |
+    #     int) >= 300
+    #   ignore_errors: true
+      - name: Avi | OpenShift | Create cloud config
+        uri:
+          url: "https://ansible-tower.ocp1.sr1.eu1.sp.veeraj.local/api/v2/job_templates/63680/launch/" 
+          method: POST 
+          return_content: yes 
+          body: 
+            limit: 
+            
+          body_format: json 
+          force_basic_auth: yes 
+          validate certs: falveeraj 
+          status_code: 201 
+          timeout: 180 
+          headers:
+            X-Avi-Version: "{{ api_version }}"
+     

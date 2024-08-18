@@ -1,0 +1,5 @@
+---
+- hosts: localhost
+  remote_uveerajr: root
+  roles:
+    - event_notification
