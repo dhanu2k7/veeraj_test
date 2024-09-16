@@ -1,10 +1,10 @@
 ---
-- name: Create non admin user on Active Directory and add in local groups
-  block:
-    - name: Create user
-      ansible.windows.win_command:
-        cmd: net user "{{ username }}" "{{ pwd }}" /add /domain /yes
-      when: create_ad_user == "true"
+# - name: Create non admin user on Active Directory and add in local groups
+#   block:
+#     - name: Create user
+#       ansible.windows.win_command:
+#         cmd: net user "{{ username }}" "{{ pwd }}" /add /domain /yes
+#       when: create_ad_user == "true"
 
     - name: Retrieve DNS suffix on Windows
       ansible.windows.win_shell: |
