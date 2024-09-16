@@ -1,0 +1,11 @@
+name: Sync Issue to Azure DevOps work item
+on:
+  issues:
+    types: [opened, edited, deleted, closed, reopened, labeled, unlabeled]
+  issue_comment:
+    types: [created, edited, deleted]
+
+jobs:
+  call-ado-workflow:
+    uses: DevOps-automation-squad/repos_common_tools/.github/workflows/sync_github_issues_with_ado.yml@main
+    secrets: inherit

@@ -1,0 +1,14 @@
+---
+name: run source code linters
+
+# will run on push and/or pull request events against main or dev branches.
+on:
+  push:
+    branches: [main, dev, feature/*, fix/*]
+  pull_request:
+    branches: [main, dev, master]
+
+jobs:
+  lint-ansible:
+    name: ansible-lint # Arbitrary name
+    uses: Continuous-Engineering/ce-workflows/.github/workflows/lint.yml@stable-2.0

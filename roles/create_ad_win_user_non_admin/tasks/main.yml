@@ -1,0 +1,119 @@
+---
+- name: Create non admin user on Active Directory and add in local groups
+  block:
+    - name: Create user
+      ansible.windows.win_command:
+        cmd: net user "{{ username }}" "{{ pwd }}" /add /domain /yes
+      when: create_ad_user == "true"
+
+    - name: Retrieve DNS suffix on Windows
+      ansible.windows.win_shell: |
+        ipconfig /all | Select-String "DNS Suffix Search List" | ForEach-Object { $_.ToString().Split("':'")[1].Trim() }
+      register: suffix_dns
+      changed_when: false
+
+    - name: Debug dns suffixes
+      ansible.builtin.debug:
+        var: suffix_dns.stdout_lines[0].split('.')[0]
+      register: suffix_dns_result
+
+    - name: Store the DNS suffix in a variable
+      ansible.builtin.set_fact:
+        domain_suffixe: "{{ suffix_dns.stdout_lines[0].split('.')[0] }}"
+
+    - name: Add user in local groups
+      ansible.windows.win_command:
+        cmd: net localgroup "{{ item }}" "{{ domain_suffixe }}\{{ username }}" /add
+      loop:
+        - Distributed COM Users
+        - Event Log Readers
+        - Performance Log Users
+        - Performance Monitor Users
+        - Remote Management Users
+  rescue:
+    - name: Something in block failed. Generate error.
+      ansible.builtin.include_role:
+        name: returncode
+      vars:
+        # noqa var-naming[no-role-prefix]
+        rc_support: account
+        rc_group: framework_playbook
+        rc_number: 3007
+        rc_message: Failed to create user on AD and add in local group
+
+- name: Configuration of winrm permissions
+  block:
+    - name: Set winrm permissions for the user
+      ansible.windows.win_shell: |
+        $user_account="{{ domain_suffixe }}\{{ username }}"
+        $objUser = $null
+        $sid = $null
+        $user = $null
+        $domain = $null
+        $sid_obj = $null
+        if ($user_account.Contains('\')) {
+            $domainaccount = $user_account.Split('\')
+            $domain = $domainaccount[0]
+            $user = $domainaccount[1]
+        } elseif ($user_account.Contains('@')) {
+            $user, $domain = $user_account.Split('@') # both results will be send to the appropriate variable
+        } else {
+            $user = $user_account
+        }
+        try {
+            if (($domain -ne $null) -and ($domain.Length -gt 0)) {
+
+                $objUser = New-Object System.Security.Principal.NTAccount($domain, $user)
+            } else {
+                $objUser = New-Object System.Security.Principal.NTAccount($user)
+            }
+            if ($objUser -ne $null) {
+                $sid_obj = $objUser.Translate([System.Security.Principal.SecurityIdentifier])
+                $sid = $sid_obj.Value
+                $sid = $sid.ToString()
+            }
+        } catch {
+            throw "GetAccountSID: Exception caught while translating account to SID - detail - $_"
+        }
+        echo $sid
+        Set-Item -Path WSMan:\localhost\Service\RootSDDL -Value "O:NSG:BAD:P(A;;GA;;;BA)(A;;GXGR;;;$sid)(A;;GA;;;IU)S:P(AU;FA;GA;;;WD)(AU;SA;GXGW;;;WD)" -Force
+  rescue:
+    - name: Something in block failed. Generate error.
+      ansible.builtin.include_role:
+        name: returncode
+      vars:
+        # noqa var-naming[no-role-prefix]
+        rc_support: account
+        rc_group: framework_playbook
+        rc_number: 3007
+        rc_message: Failed to configure winrm
+
+- name: Configuration of wmi and restart service
+  block:
+    - name: Copy a script file
+      ansible.windows.win_copy:
+        src: "{{ wmi_script }}"
+        dest: "{{ dest_path }}"
+
+    - name: Config security for Root
+      ansible.windows.win_command: '{{ dest_path }}\\{{ wmi_script }} {{ domain_suffixe }}\{{ username }}'
+      args:
+        warn: false
+        force_quotes: true
+      register: command_output
+      notify: Restart wmi
+
+    - name: Debug command output
+      ansible.builtin.debug:
+        var: command_output
+
+  rescue:
+    - name: Something in block failed. Generate error.
+      ansible.builtin.include_role:
+        name: returncode
+      vars:
+        # noqa var-naming[no-role-prefix]
+        rc_support: account
+        rc_group: framework_playbook
+        rc_number: 3007
+        rc_message: Failed to configure WMI and restart service

@@ -1,0 +1,14 @@
+---
+name: run markdown linter
+
+# will run on push and/or pull request events against main or dev branches.
+on:
+  push:
+    branches: [main, dev, feature/*, fix/*]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  lint-markdown:
+    name: markdown-lint # Arbitrary name
+    uses: Continuous-Engineering/ce-workflows/.github/workflows/markdown.yml@main
