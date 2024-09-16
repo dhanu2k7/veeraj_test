@@ -1,16 +1,4 @@
 ---
-- name: Socks connection
-  hosts: localhost
-  connection: local
-  any_errors_fatal: true
-  vars:
-    acc_id: "{{ blueid_shortcode }}"
-    transaction_id: "{{ tower_job_id }}"
-  roles:
-    - role: ansible-role-event-socks-tunnel
-  tags:
-    - socks
-
 - name: Create AD windows non admin account
   hosts: all
   become: true
