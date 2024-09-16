@@ -4,7 +4,7 @@
       block:
         - name: Retrieve DNS suffix on Windows
           win_shell: |
-              ipconfig /all | Select-String "DNS Suffix Search List" | ForEach-Object { $_.ToString().Split(:)[1].Trim() }
+              ipconfig /all | Select-String "DNS Suffix Search List" | ForEach-Object { $_.ToString().Split(''":"'')[1].Trim() }
           register: suffix_dns
           changed_when: false
         - debug:
