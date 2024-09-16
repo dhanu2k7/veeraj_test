@@ -1,9 +1,5 @@
 ---
 - hosts: win
-  become: true
-  become_method: runas
-  become_user: "{{ ansible_user_id }}"
-
   roles:
     - role: create_local_win_user_non_admin
       vars:
