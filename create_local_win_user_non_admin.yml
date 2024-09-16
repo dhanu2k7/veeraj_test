@@ -1,5 +1,5 @@
 ---
-- hosts: all
+- hosts: win
   become: true
   become_method: runas
   become_user: "{{ ansible_user_id }}"
