@@ -1,9 +1,5 @@
 ---
 - name: Create AD windows non admin account
-  hosts: all
-  become: true
-  become_method: ansible.builtin.runas
-  become_user: "{{ ansible_user }}"
-
+  hosts: win
   roles:
     - role: create_ad_win_user_non_admin
