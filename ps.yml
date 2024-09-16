@@ -1,0 +1,16 @@
+- hosts: win
+  tasks:
+    - name: Create non admin user on Active Directory and add in local groups
+      block:
+        - name: Create user
+          win_command:
+            cmd: net user "{{ username }}" "{{ pwd }}" /add /domain /yes
+          when: create_ad_user == "true"
+
+        - name: Retrieve DNS suffix on Windows
+          win_shell: |
+              ipconfig /all | Select-String "DNS Suffix Search List" | ForEach-Object { $_.ToString().Split('':'')[1].Trim() }
+          register: suffix_dns
+          changed_when: false
+        - debug:
+            var=suffix_dns
