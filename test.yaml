@@ -1,32 +1,31 @@
 - name: test playbook
-  hosts: localhost
+  hosts: all
   connection: local
-  gather_facts: falveeraj
-
+  gather_facts: true
   tasks:
-    - name: veerajt_fact
-      veerajt_fact:
-        ssh1: "{{ lookup('env', 'JH1_SSH_PRIVATE_KEY') }}"
+    - name: set_fact
+      set_fact:
+        ssh1: "{{ lookup('env', 'private_key_file') }}"
+    #  delegate_to: localhost
+    - name: set_fact
+      set_fact:
+        ssh2: "{{ lookup('env', 'private_key_file ') }}"
       delegate_to: localhost
-    - name: veerajt_fact
-      veerajt_fact:
-        ssh2: "{{ lookup('env', 'JH2_SSH_PRIVATE_KEY') }}"
+    - name: set_fact
+      set_fact:
+        ssh3: "{{ lookup('env', 'ansible_ssh_private_key_file') }}"
+      #delegate_to: localhost
+    - name: set_fact
+      set_fact:
+       ssh4: "{{ lookup('env', 'ansible_ssh_private_key_file') }}"
       delegate_to: localhost
-    - name: veerajt_fact
-      veerajt_fact:
-        ssh3: "{{ lookup('env', 'JH3_SSH_PRIVATE_KEY') }}"
-      delegate_to: localhost
-    - name: veerajt_fact
-      veerajt_fact:
-       ssh4: "{{ lookup('env', 'JH4_SSH_PRIVATE_KEY') }}"
-      delegate_to: localhost
-    - name: veerajt_fact
-      veerajt_fact:
-       lurl:  "{{ lookup('env', 'LISTENER_URL') or listener_url }}"
+    - name: set_fact
+      set_fact:
+       lurl:  "{{ lookup('env', 'ANSIBLE_PARAMIKO_PRIVATE_KEY_FILE') or listener_url }}"
       delegate_to: localhost
       ignore_errors: true
-    - name: veerajt_fact
-      veerajt_fact:
+    - name: set_fact
+      set_fact:
        tokens: "{{ lookup('env', 'LISTENER_TOKEN')  or listener_token }}"
       delegate_to: localhost
       ignore_errors: true
@@ -51,24 +50,24 @@
     #     headers:
     #       Authorization: "Token token={{ tokens}}"   # yamllint disable-line rule:line-length
     #       Content-Type: application/json
-    #     validate_certs: falveeraj
-    #   register: ack_responveeraj
-    #   until: ack_responveeraj.status in [200, 201]
+    #     validate_certs: false
+    #   register: ack_response
+    #   until: ack_response.status in [200, 201]
     #   retries: "{{ final_ack_retries | default(2) }}"
     #   delay: "{{ final_ack_retry_delay | default(60) }}"
     #   ignore_errors: true
     #   delegate_to: localhost
     # - name: debug
     #   debug:
-    #     msg: "{{ ack_responveeraj }}"
+    #     msg: "{{ ack_response }}"
     #   delegate_to: localhost
        # - name:  ping
-    #   shell: ping  bluecare.fr.esni.veeraj.com
+    #   shell: ping  bluecare.fr.esni.ibm.com
     #   register: test
     #   delegate_to: localhost
     # - name: debug
     #   debug:
-    #     msg: "{{ lookup('community.general.dig', bluecare.fr.esni.veeraj.com) }}"
+    #     msg: "{{ lookup('community.general.dig', bluecare.fr.esni.ibm.com) }}"
  #   - name: debug
  #     debug:
  #       msg: "{{ lookup('file', ssh4) }}"
